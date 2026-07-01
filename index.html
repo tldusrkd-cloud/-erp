@@ -39,7 +39,7 @@
         
         .tab-menu { display: flex; background: white; padding: 4px; border-radius: 10px; margin-bottom: 10px; border: 1px solid var(--border); gap: 4px; }
         .tab-btn { flex: 1; padding: 10px 2px; text-align: center; font-size: 12px; font-weight: 700; color: var(--gray); border: none; background: none; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; word-break: keep-all; }
-        .tab-btn.active { background: var(--primary); color: white; box-shadow: 0 2px 6px rgba(99, 91, 255, 0.2); }
+        .tab-btn.active { background: var(--primary); color: white; box-shadow: 0 2px 6px rgba(99,91,255,0.2); }
         
         .page-content { display: none; }
         .page-content.active { display: block; }
@@ -116,7 +116,6 @@
         .day-box .memo-dot { width: 4px; height: 4px; background: var(--success); border-radius: 50%; }
         
         .section-divider { margin: 15px 0 10px 0; border-top: 2px dashed var(--border); padding-top: 10px; }
-        .staff-row { padding: 10px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px; background: var(--light-gray); }
         .staff-row { padding: 10px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px; background: var(--light-gray); }
         .staff-main { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; }
         .payroll-detail { background: white; padding: 8px; border-radius: 6px; margin-top: 6px; font-size: 11px; color: #475569; border: 1px dashed var(--border); word-break: keep-all; }
@@ -465,7 +464,6 @@
                 </select>
             </div>
 
-
             <div style="display:flex; justify-content: flex-end; gap:6px; margin-top: 10px;">
                 <button class="btn btn-outline" id="btnCancelEdit" style="padding: 8px 12px; display:none;" onclick="cancelEdit()">작성 취소</button>
                 <button class="btn btn-primary" id="btnSaveStaff" style="padding: 8px 16px;" onclick="saveStaffSubmit()">정보 저장 (명부 등록)</button>
@@ -677,7 +675,6 @@
     </div>
 
 <script>
-    // 🔥 아이폰(iOS) 로컬 파일 실행 시 localStorage 보안 에러 우회용 안전 저장소
     const safeStorage = {
         memoryStore: {},
         isAvailable: function() {
@@ -710,7 +707,6 @@
         }
     };
 
-    // 🔥 초간단 근로소득세 계산기 (부양가족 비례 약식)
     function calculateSimpleIncomeTax(monthlyGross, dependents) {
         if (monthlyGross < 1060000) return 0;
         let taxBase = monthlyGross - 1060000;
@@ -722,7 +718,6 @@
 
     let currentMode = null;
 
-    // 🔥 언제 어디서 접속하든 무조건 고정 암호 1045 체크 로직 적용 완료
     function selectMode(mode) {
         if (mode === 'admin') {
             let inputPwd = prompt("관리자 암호를 입력해주세요:");
@@ -749,7 +744,6 @@
         }
     }
 
-    // 🔥 암호 변경 카드 클릭 시 안내 메시지로 대체
     function changeAdminPassword() {
         alert("본 시스템의 관리자 마스터 암호는 '1045'로 항상 강제 고정되어 설계되었습니다.");
     }
@@ -881,14 +875,13 @@
     const timeOptions = ["휴무"];
     for(let i=9; i<=22; i++) { timeOptions.push(`${String(i).padStart(2,'0')}:00`); timeOptions.push(`${String(i).padStart(2,'0')}:30`); }
 
-    // 🔥 2026년, 2027년, 2028년 모든 신정, 설날연휴, 삼일절, 어린이날, 현충일, 추석연휴, 성탄절 및 대체공휴일 완전 동기화 맵핑 완료
     const holidayMap = {
         // --- 2026년 ---
-        "2026-01-01": "신정", "2026-02-16": "설날연휴", "2026-02-17": "설날", "2026-02-18": "설날연휴", "2026-03-01": "삼일절", "2026-03-02": "대체공휴일", "2026-05-01": "근로자의날", "2026-05-05": "어린이날", "2026-05-24": "부처님오신날", "2026-05-25": "대체공휴일", "2026-06-03": "지방선거", "2026-06-06": "현충일", "2026-08-15": "광복절", "2026-08-17": "대체공휴일", "2026-09-24": "추석연휴", "2026-09-25": "추석", "2026-09-26": "추석연휴", "2026-10-03": "개천절", "2026-10-05": "대체공휴일", "2026-10-09": "한글날", "2026-12-25": "성탄절",
+        "2026-01-01": "신정", "2026-02-16": "설날연휴", "2026-02-17": "설날", "2026-02-18": "설날연휴", "2026-03-01": "삼일절", "2026-03-02": "대체공휴일", "2026-05-01": "근로자의날", "2026-05-05": "어린이날", "2026-05-24": "부처님오신날", "2026-05-25": "대체공휴일", "2026-06-03": "지방선거", "2026-06-06": "현충일", "2026-07-17": "제헌절", "2026-08-15": "광복절", "2026-08-17": "대체공휴일", "2026-09-24": "추석연휴", "2026-09-25": "추석", "2026-09-26": "추석연휴", "2026-10-03": "개천절", "2026-10-05": "대체공휴일", "2026-10-09": "한글날", "2026-12-25": "성탄절",
         // --- 2027년 ---
-        "2027-01-01": "신정", "2027-02-06": "설날연휴", "2027-02-07": "설날", "2027-02-08": "설날연휴", "2027-02-09": "대체공휴일", "2027-03-01": "삼일절", "2027-05-01": "근로자의날", "2027-05-05": "어린이날", "2027-05-13": "부처님오신날", "2027-06-06": "현충일", "2027-08-15": "광복절", "2027-08-16": "대체공휴일", "2027-09-14": "추석연휴", "2027-09-15": "추석", "2027-09-16": "추석연휴", "2027-10-03": "개천절", "2027-10-09": "한글날", "2027-10-11": "대체공휴일", "2027-12-25": "성탄절",
+        "2027-01-01": "신정", "2027-02-06": "설날연휴", "2027-02-07": "설날", "2027-02-08": "설날연휴", "2027-02-09": "대체공휴일", "2027-03-01": "삼일절", "2027-05-01": "근로자의날", "2027-05-05": "어린이날", "2027-05-13": "부처님오신날", "2027-07-17": "제헌절", "2027-07-19": "대체공휴일", "2027-06-06": "현충일", "2027-08-15": "광복절", "2027-08-16": "대체공휴일", "2027-09-14": "추석연휴", "2027-09-15": "추석", "2027-09-16": "추석연휴", "2027-10-03": "개천절", "2027-10-09": "한글날", "2027-10-11": "대체공휴일", "2027-12-25": "성탄절",
         // --- 2028년 ---
-        "2028-01-01": "신정", "2028-01-26": "설날연휴", "2028-01-27": "설날", "2028-01-28": "설날연휴", "2028-03-01": "삼일절", "2028-05-01": "근로자의날", "2028-05-02": "부처님오신날", "2028-05-05": "어린이날", "2028-05-31": "제22대 국회의원선거", "2028-06-06": "현충일", "2028-08-15": "광복절", "2028-10-02": "추석연휴", "2028-10-03": "추석/개천절", "2028-10-04": "추석연휴", "2028-10-05": "대체공휴일", "2028-10-09": "한글날", "2028-12-25": "성탄절"
+        "2028-01-01": "신정", "2028-01-26": "설날연휴", "2028-01-27": "설날", "2028-01-28": "설날연휴", "2028-03-01": "삼일절", "2028-05-01": "근로자의날", "2028-05-02": "부처님오신날", "2028-05-05": "어린이날", "2028-05-31": "제22대 국회의원선거", "2028-06-06": "현충일", "2028-07-17": "제헌절", "2028-08-15": "광복절", "2028-10-02": "추석연휴", "2028-10-03": "추석/개천절", "2028-10-04": "추석연휴", "2028-10-05": "대체공휴일", "2028-10-09": "한글날", "2028-12-25": "성탄절"
     };
 
     let db = JSON.parse(safeStorage.getItem('ccamon_v14_db')) || { staff: [], schedule: {}, memos: {}, expenses: {}, actualExpenses: {}, company: {}, trash: [] };
@@ -1026,7 +1019,6 @@
         renderStaff();
     }
 
-    // 연도 선택 목록에 2028년도 자동 대응되도록 반복문 상한 변경
     function initUI() {
         const y = document.getElementById('yearSel'); const m = document.getElementById('monthSel');
         if(y.options.length === 0) {
@@ -1080,7 +1072,7 @@
         if(useFirebase && dbRef) {
             dbRef.set(db).catch(err => {
                 console.error("Firebase 저장 실패:", err);
-                alert("🚨 클라우드 저장에 실패했습니다. 파이어베이스 '규칙(Rules)'이 막혀있는지 확인해주세요.");
+                alert("🚨 클라우드 저장에 실패했습니다. 파이어베이스 '규칙(Rules)' 탭에서 .read와 .write를 모두 true로 변경해주세요.");
             });
         }
     }
@@ -2076,7 +2068,7 @@
             
             if (s.payType === "해당없음") { 
                 document.getElementById('pdfNormalHoursCalc').innerText = "정산대상 제외 직급"; 
-                document.getElementById('pdfExtraCalc').innerText = "정산대상 제외 직급"; 
+                document.getElementById('pdfExtraHoursCalc').innerText = "정산대상 제외 직급"; 
             } 
             else if (s.payType === "일급") { 
                 document.getElementById('pdfNormalHoursCalc').innerText = `${totalShifts}일 (일별 합산)`; 
