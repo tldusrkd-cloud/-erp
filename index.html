@@ -1,0 +1,2426 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>까몬 포항양덕점 통합 ERP 매니저</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght=400;500;700&display=swap" rel="stylesheet">
+    <!-- PDF 및 이미지 저장용 라이브러리 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <!-- 🔥 Firebase 실시간 데이터베이스 통신용 라이브러리 추가 -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <style>
+        :root {
+            --primary: #635bff;
+            --primary-dark: #0a2540;
+            --secondary: #00d4b2;
+            --bg-main: #f4f7fa;
+            --dark-gray: #1a202c;
+            --light-gray: #f8fafc;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --accent: #f59e0b;
+            --gray: #64748b;
+            --holiday-color: #dc2626;
+            --today-color: #ef4444;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Noto Sans KR', sans-serif; }
+        body { background: var(--bg-main); padding: 8px; color: var(--dark-gray); -webkit-tap-highlight-color: transparent; font-size: 14px; overflow: hidden; }
+        
+        header { 
+            background: linear-gradient(135deg, var(--primary-dark), #10355a); 
+            color: white; padding: 15px 10px; border-radius: 12px; margin-bottom: 10px;
+            box-shadow: 0 4px 10px rgba(10, 37, 64, 0.1); text-align: center;
+        }
+        header h1 { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.5px; word-break: keep-all; }
+        
+        .tab-menu { display: flex; background: white; padding: 4px; border-radius: 10px; margin-bottom: 10px; border: 1px solid var(--border); gap: 4px; }
+        .tab-btn { flex: 1; padding: 10px 2px; text-align: center; font-size: 12px; font-weight: 700; color: var(--gray); border: none; background: none; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; word-break: keep-all; }
+        .tab-btn.active { background: var(--primary); color: white; box-shadow: 0 2px 6px rgba(99, 91, 255, 0.2); }
+        
+        .page-content { display: none; }
+        .page-content.active { display: block; }
+
+        .card { background: white; padding: 12px; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.01); margin-bottom: 10px; border: 1px solid var(--border); }
+        h2 { font-size: 1rem; font-weight: 700; margin-bottom: 10px; color: var(--primary-dark); display: flex; justify-content: space-between; align-items: center; word-break: keep-all; }
+        
+        .flex-group { display: flex; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 6px; margin-bottom: 6px; }
+        .sub-title { font-size: 11px; font-weight: bold; color: var(--gray); margin-bottom: 4px; margin-top: 4px; word-break: keep-all; }
+
+        input, select, textarea { 
+            padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; 
+            font-size: 12px; background: var(--light-gray); transition: all 0.2s ease;
+            color: var(--dark-gray); font-weight: 500; width: 100%;
+        }
+        input:focus, select:focus, textarea:focus { border-color: var(--primary); background: white; outline: none; }
+        .flex-1 { flex: 1; }
+        
+        .btn { padding: 8px 12px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 12px; transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 4px; word-break: keep-all; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-secondary { background: var(--primary-dark); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-outline { border: 1px solid var(--border); background: white; color: var(--gray); }
+        
+        .grid-7 { 
+            display: grid !important; 
+            grid-template-columns: repeat(7, minmax(0, 1fr)) !important; 
+            gap: 4px !important; 
+            width: 100% !important;
+            box-sizing: border-box !important;
+        }
+        .calendar-header { font-weight: 700; color: var(--gray); font-size: 11px; padding: 6px 0; text-align: center; }
+        .calendar-header:first-child { color: var(--holiday-color); }
+        .calendar-header:last-child { color: #3b82f6; }
+        
+        .day-box { 
+            border: 1px solid var(--border); 
+            padding: 4px 2px; 
+            border-radius: 8px; 
+            background: white; 
+            cursor: pointer; 
+            position: relative; 
+            min-height: 90px; 
+            width: 100% !important;
+            box-sizing: border-box !important;
+            transition: all 0.2s ease; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: flex-start; 
+            align-items: stretch;
+            overflow: hidden;
+        }
+        .day-box.active { border-color: var(--primary) !important; background: #f0efff !important; box-shadow: 0 0 0 2px rgba(99,91,255,0.2); }
+        .day-box.today { border: 2px solid var(--today-color) !important; background-color: #fef2f2 !important; }
+        .day-box.today .day-num { color: var(--today-color); font-weight: bold; }
+        .day-box.holiday .day-num { color: var(--holiday-color); font-weight: bold; }
+        
+        .day-header-flex { display: flex; justify-content: space-between; align-items: center; padding: 0 2px; width: 100%; margin-bottom: 3px; }
+        .day-num { font-size: 11px; font-weight: 700; }
+        .holiday-label { font-size: 9px; color: var(--holiday-color); font-weight: bold; max-width: 65%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        .shift-badges { display: flex; flex-direction: column; gap: 2px; width: 100%; align-items: center; }
+        .staff-name-badge { font-size: 9px; padding: 2px 3px; border-radius: 4px; font-weight: bold; text-align: center; width: 96%; display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+        
+        .badge-full { background-color: #e6f4ea; color: #137333; border: 1px solid #ceead6; }      
+        .badge-lunch { background-color: #fef3c7; color: #b45309; border: 1px solid #fde68a; }     
+        .badge-dinner { background-color: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }    
+        .badge-urgent { border: 1px dashed #ef4444 !important; } 
+
+        .day-box .dot-container { display: flex; justify-content: center; gap: 2px; margin-top: auto; padding-top: 3px; width: 100%; }
+        .day-box .extra-badge-dot { width: 4px; height: 4px; background: #ef4444; border-radius: 50%; }
+        .day-box .memo-dot { width: 4px; height: 4px; background: var(--success); border-radius: 50%; }
+        
+        .section-divider { margin: 15px 0 10px 0; border-top: 2px dashed var(--border); padding-top: 10px; }
+        .staff-row { padding: 10px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px; background: var(--light-gray); }
+        .staff-main { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; }
+        .payroll-detail { background: white; padding: 8px; border-radius: 6px; margin-top: 6px; font-size: 11px; color: #475569; border: 1px dashed var(--border); word-break: keep-all; }
+        
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-top: 10px; }
+        .db-item { background: var(--light-gray); padding: 10px; border-radius: 10px; border: 1px solid var(--border); }
+        .db-label { font-size: 11px; color: var(--gray); font-weight: bold; }
+        .db-value { font-size: 14px; font-weight: 700; margin-top: 2px; }
+        
+        .status-pill { display: inline-block; padding: 1px 6px; border-radius: 10px; font-size: 10px; font-weight: 700; color: white; margin-top: 4px; }
+        .bg-good { background: var(--success); }
+        .bg-bad { background: #ef4444; }
+        
+        .switch-label { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 500; background: white; padding: 4px 6px; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; }
+        .day-selector { display: flex; gap: 2px; margin-bottom: 6px; width: 100%; }
+        .day-btn { flex: 1; padding: 6px 0; font-size: 11px; font-weight: bold; border: 1px solid var(--border); background: var(--light-gray); border-radius: 6px; cursor: pointer; text-align: center; }
+        .day-btn.selected { background: var(--primary-dark); color: white; border-color: var(--primary-dark); }
+
+        .money-input { text-align: right; font-weight: 700; color: var(--primary-dark); }
+        .money-input:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
+
+        .day-time-config-row { display: flex; align-items: center; gap: 6px; margin-top: 4px; background: white; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); flex-wrap: wrap; }
+        .day-time-config-label { width: 25px; font-weight: bold; font-size: 11px; color: var(--primary-dark); text-align: center; }
+
+        span, p, div, label, td, th { word-break: keep-all; }
+    </style>
+</head>
+<body>
+
+    <!-- 🔥 초기 로그인(모드 선택) 오버레이 -->
+    <div id="loginOverlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 37, 64, 0.95); z-index: 9999; display: flex; justify-content: center; align-items: center; flex-direction: column;">
+        <div style="background: white; padding: 30px; border-radius: 16px; text-align: center; width: 90%; max-width: 350px; box-shadow: 0 10px 25px rgba(0,0,0,0.3);">
+            <h2 style="margin-bottom: 25px; color: var(--primary-dark); font-size: 1.25rem; line-height: 1.4;">까몬 포항양덕점<br>통합 ERP 접속</h2>
+            <button class="btn btn-primary" style="width: 100%; margin-bottom: 12px; padding: 14px; font-size: 14px; border-radius: 10px;" onclick="selectMode('admin')">👑 관리자 모드 (전체 권한)</button>
+            <button class="btn btn-outline" style="width: 100%; padding: 14px; font-size: 14px; border-radius: 10px; border-width: 2px;" onclick="selectMode('staff')">👥 직원 모드 (스케줄 열람 전용)</button>
+        </div>
+    </div>
+
+    <header>
+        <h1 id="appTitle">까몬 포항양덕점 통합 ERP 매니저</h1>
+    </header>
+
+    <div id="mainAppWrapper">
+
+    <div class="tab-menu">
+        <button class="tab-btn active" onclick="switchPage('pageCalendar')">📅 근무표 캘린더</button>
+        <button class="tab-btn admin-only" onclick="switchPage('pageStaff')">👥 직원 관리</button>
+        <button class="tab-btn admin-only" onclick="switchPage('pageProfit')">💰 종합 손익 · 급여</button>
+    </div>
+
+    <!-- 관리자만 보이는 마스터 데이터 관리 카드 -->
+    <div class="card admin-only">
+        <h2>🔗 마스터 데이터 관리 <span id="syncStatusBadge" style="font-size:10px; padding:2px 6px; border-radius:4px; background:#e2e8f0; color:var(--gray);">로컬 모드</span></h2>
+        <div class="flex-group">
+            <input type="text" id="cloudData" class="flex-1" placeholder="동기화 코드 데이터 자동 계산" readonly onclick="this.select()">
+            <button class="btn btn-outline" style="padding:8px 10px;" onclick="copyCloudData()">복사</button>
+            <button class="btn btn-secondary" style="padding:8px 10px;" onclick="loadCloudData()">수동복원</button>
+        </div>
+        <div class="flex-group" style="margin-top:4px;">
+            <button class="btn btn-success flex-1" onclick="downloadCSV('all')">📊 마스터 백업(CSV)</button>
+            <input type="file" id="csvFileInput" accept=".csv" style="display:none;" onchange="importCSVBackup(this)">
+            <button class="btn btn-outline flex-1" style="border-color: var(--success); color: var(--success);" onclick="document.getElementById('csvFileInput').click()">📂 백업 CSV로 복원</button>
+            <button class="btn btn-primary flex-1" onclick="downloadScheduleImage()">👁️ 직원공유용 이미지 저장</button>
+        </div>
+        <button class="btn btn-outline" style="width: 100%; margin-top: 6px; border-color: #8b5cf6; color: #8b5cf6;" onclick="changeAdminPassword()">🔒 관리자 암호 변경</button>
+    </div>
+
+    <div id="pageCalendar" class="page-content active">
+        <div class="card">
+            <h2 style="flex-wrap: wrap; gap: 8px;">
+                <span>📅 스케줄 캘린더</span>
+                <div style="display:flex; gap:4px; align-items:center; margin-left:auto;">
+                    <select id="yearSel" onchange="renderCalendar()" style="padding: 4px; width:75px; font-size:11px;"></select>
+                    <select id="monthSel" onchange="renderCalendar()" style="padding: 4px; width:60px; font-size:11px;"></select>
+                    <button class="btn btn-outline" style="padding: 4px 8px; font-size: 11px; font-weight: bold; color: var(--primary); border-color: var(--primary);" onclick="refreshCalendarList()">🔄 새로고침</button>
+                    <!-- 캘린더 초기화 및 되돌리기 버튼은 관리자만 -->
+                    <button class="btn btn-outline admin-only" style="padding: 4px 8px; font-size: 11px; font-weight: bold; color: #ef4444; border-color: #ef4444;" onclick="clearMonthSchedule()">🗑️ 초기화</button>
+                    <button id="undoMonthBtn" class="btn btn-success admin-only" style="display:none; padding: 4px 8px; font-size: 11px; font-weight: bold;" onclick="undoClearMonthSchedule()">↩️ 되돌리기</button>
+                </div>
+            </h2>
+            
+            <!-- 🔥 스케줄 색상 범례 (직원/관리자 모두 노출) -->
+            <div style="display:flex; flex-wrap:wrap; gap:10px; font-size:11px; margin-bottom:8px; padding:8px; background:white; border:1px solid var(--border); border-radius:8px; justify-content:center;">
+                <div style="display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:12px; height:12px; background:#e6f4ea; border:1px solid #ceead6; border-radius:3px;"></span> 풀타임 (종일)</div>
+                <div style="display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:12px; height:12px; background:#fef3c7; border:1px solid #fde68a; border-radius:3px;"></span> 점심 (오전~오후)</div>
+                <div style="display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:12px; height:12px; background:#dbeafe; border:1px solid #bfdbfe; border-radius:3px;"></span> 저녁 (오후~마감)</div>
+                <div style="display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:12px; height:12px; background:#ffffff; border:1px dashed #ef4444; border-radius:3px;"></span> 추가/긴급근무</div>
+            </div>
+
+            <div id="calendarStaffFilter" class="flex-group" style="margin-bottom: 8px; padding: 6px; background: var(--light-gray); border-radius: 8px; border: 1px dashed var(--border); align-items: center;">
+            </div>
+
+            <div class="grid-7" style="margin-bottom: 6px; border-bottom: 1px solid var(--border);">
+                <div class="calendar-header">일</div><div class="calendar-header">월</div><div class="calendar-header">화</div>
+                <div class="calendar-header">수</div><div class="calendar-header">목</div><div class="calendar-header">금</div><div class="calendar-header">토</div>
+            </div>
+            <div id="calendar" class="grid-7"></div>
+        </div>
+
+        <div class="card" id="editCard" style="display:none; border-left: 5px solid var(--primary);">
+            <h2 id="targetDateTitle">📌 날짜 선택됨</h2>
+            
+            <!-- 관리자만 복사/공유 가능 -->
+            <div class="flex-group admin-only" style="margin-bottom: 10px;">
+                <button class="btn btn-primary flex-1" onclick="copyToMonth()">이 하루 일정 이달 전체 복사 🔄</button>
+                <button class="btn btn-outline" style="color: #ea580c; background: #fff7ed; border-color: #ffedd5;" onclick="shareKakao()">카카오톡 공지 복사 💬</button>
+            </div>
+            
+            <div style="background: var(--light-gray); padding: 10px; border-radius: 10px; margin-bottom: 10px; border: 1px solid var(--border);">
+                <div style="font-weight: 700; color: var(--primary-dark); margin-bottom: 4px; font-size:12px;">📝 당일 매장 특이사항 / 스태프밀</div>
+                <textarea id="dayMemo" style="width: 100%; height: 45px; resize: none; background: white;" placeholder="전달사항이나 스태프밀 내용 기록" oninput="saveMemo()"></textarea>
+            </div>
+
+            <!-- 관리자만 투입 기능 노출 -->
+            <div class="admin-only" style="background: #f0efff; padding: 10px; border-radius: 10px; margin-bottom: 10px; border: 1px solid rgba(99,91,255,0.2);">
+                <div style="font-weight: 700; color: var(--primary); margin-bottom: 6px; font-size:12px;">➕ 이 날짜에 근무자 지정 추가</div>
+                <div class="form-grid" style="grid-template-columns: repeat(2, 1fr);">
+                    <div style="grid-column: span 2;">
+                        <div class="sub-title" style="margin-top:0;">근무 직원 선택 (배정이 이미 있다면 근무1 덮어쓰기)</div>
+                        <select id="addSchedStaffName" style="background:white;"></select>
+                    </div>
+                    <div>
+                        <div class="sub-title" style="margin-top:0;">출근 시간</div>
+                        <select id="addSchedStart" style="background:white;"></select>
+                    </div>
+                    <div>
+                        <div class="sub-title" style="margin-top:0;">퇴근 시간</div>
+                        <select id="addSchedEnd" style="background:white;"></select>
+                    </div>
+                    <div style="grid-column: span 2;">
+                        <div class="sub-title" style="margin-top:0;">휴식 공제</div>
+                        <select id="addSchedBreak" style="background:white;">
+                            <option value="0">휴식 없음</option>
+                            <option value="0.5">30분 공제</option>
+                            <option value="1" selected>1시간 공제</option>
+                            <option value="1.5">1.5시간 공제</option>
+                            <option value="2">2시간 공제</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
+                    <label style="color:#8b5cf6; font-size:11px; font-weight:700;">
+                        <input type="checkbox" id="addSchedUrgent"> ⚠️ 추가근무 인정
+                    </label>
+                    <button class="btn btn-primary" style="padding:5px 10px; font-size:11px;" onclick="addStaffShiftDirect()">근무 투입 확정</button>
+                </div>
+            </div>
+
+            <div style="font-weight: 700; color: var(--primary-dark); margin-bottom: 6px; font-size:12px;">👥 지정된 당일 근무자 세부 일정</div>
+            <div id="scheduleInputs" style="display: flex; flex-direction: column; gap: 6px;"></div>
+        </div>
+    </div>
+
+    <div id="pageStaff" class="page-content">
+        <div class="card" style="border-top: 4px solid var(--primary);">
+            <h2 style="align-items: center; flex-wrap: wrap; gap: 8px;">
+                <span>👥 현재 등록된 직원 관리 명부 목록</span>
+                <div style="display:flex; gap:4px; align-items:center; margin-left:auto;">
+                    <button class="btn btn-outline admin-only" style="padding: 4px 8px; font-size: 11px; font-weight: bold; color: #ef4444; border-color: #ef4444;" onclick="clearAllStaffList()">🗑️ 전체 초기화</button>
+                    <button id="undoStaffBtn" class="btn btn-success admin-only" style="display:none; padding: 4px 8px; font-size: 11px; font-weight: bold;" onclick="undoClearStaffList()">↩️ 되돌리기</button>
+                </div>
+            </h2>
+            <div style="margin-bottom: 8px; display: flex; gap: 4px; border-bottom: 1px solid var(--border); padding-bottom: 6px; flex-wrap: wrap;">
+                <button class="btn btn-primary" id="filterWorking_m" style="padding: 4px 10px; font-size:11px;" onclick="changeStaffFilter('working')">재직자만</button>
+                <button class="btn btn-outline" id="filterAll_m" style="padding: 4px 10px; font-size:11px;" onclick="changeStaffFilter('all')">전체보기</button>
+                <button class="btn btn-outline" id="filterQuit_m" style="padding: 4px 10px; font-size:11px;" onclick="changeStaffFilter('quit')">퇴사자만</button>
+                <button class="btn btn-outline" id="filterTrash_m" style="padding: 4px 10px; font-size:11px; margin-left:auto; border-color:#ef4444; color:#ef4444;" onclick="changeStaffFilter('trash')">🗑️ 휴지통</button>
+            </div>
+            <div id="managementStaffListArea"></div>
+        </div>
+
+        <div class="card" style="border-top: 4px solid var(--primary-dark);">
+            <h2 id="staffFormTitle">➕ 신규 직원 카드 등록 / 계약 정보 수정</h2>
+            <div id="editingIdx" style="display:none; color: var(--primary); font-weight: bold; font-size: 12px; margin-bottom:6px;">⚠️ 선택한 직원의 카드 정보를 수정하는 중입니다.</div>
+            
+            <div class="sub-title">인적사항 및 고용 형태</div>
+            <div class="form-grid" style="grid-template-columns: repeat(2, 1fr);">
+                <input type="text" id="staffName" placeholder="이름 (필수)">
+                <input type="text" id="staffBirth" placeholder="생년월일 6자리" maxlength="6">
+                <input type="tel" id="staffPhone" placeholder="전화번호" oninput="onInputPhone(this)">
+                <select id="staffPosition" onchange="handlePositionChange()">
+                    <option value="알바생" selected>알바생</option>
+                    <option value="매니저">매니저</option>
+                    <option value="직원">직원</option>
+                    <option value="일용직">일용직</option>
+                    <option value="사장님">사장님</option>
+                </select>
+                <select id="payType" onchange="togglePlaceholder()">
+                    <option value="시급">시급제 알바</option>
+                    <option value="일급">일급제 일용직</option>
+                    <option value="월급">월급제 직원</option>
+                    <option value="해당없음">해당없음 (급여안나감)</option>
+                </select>
+                <div>
+                    <span id="payAmountLabel" style="font-size:11px; font-weight:bold; color:var(--gray);">기본 계약 시급</span>
+                    <input type="text" id="payAmount" value="10,030원" class="money-input" onfocus="clearFormat(this)" onblur="formatInput(this)">
+                </div>
+            </div>
+
+            <div id="overtimePayContainer" style="display: none; background: #fff7ed; padding: 8px; border: 1px solid #ffedd5; border-radius: 8px; margin-bottom: 6px;">
+                <span style="font-size: 11px; font-weight: 700; color: #c2410c;">⏰ 월급/일급 전용: 추가 근무 시 정산할 기준 시급</span>
+                <input type="text" id="overtimeHourlyPay" value="10,030원" class="money-input" style="background: white; margin-top: 4px;" onfocus="clearFormat(this)" onblur="formatInput(this)">
+            </div>
+
+            <div class="form-grid" style="grid-template-columns: repeat(2, 1fr); align-items: center;">
+                <select id="staffBank" onchange="onBankChange()">
+                    <option value="">-- 수령 은행 선택 --</option>
+                    <option value="신한은행">신한은행</option>
+                    <option value="국민은행">국민은행</option>
+                    <option value="우리은행">우리은행</option>
+                    <option value="하나은행">하나은행</option>
+                    <option value="농협은행">농협은행 (NH)</option>
+                    <option value="기업은행">기업은행 (IBK)</option>
+                    <option value="케이뱅크">케이뱅크</option>
+                    <option value="카카오뱅크">카카오뱅크</option>
+                    <option value="토스뱅크">토스뱅크</option>
+                    <option value="우체국">우체국</option>
+                    <option value="새마을금고">새마을금고</option>
+                    <option value="신협">신협</option>
+                    <option value="수협은행">수협은행</option>
+                    <option value="부산은행">부산은행</option>
+                    <option value="대구은행">대구은행 (iM뱅크)</option>
+                    <option value="경남은행">경남은행</option>
+                    <option value="광주은행">광주은행</option>
+                    <option value="전북은행">전북은행</option>
+                    <option value="제주은행">제주은행</option>
+                    <option value="씨티은행">한국씨티은행</option>
+                    <option value="기타은행">기타은행(하이픈자동오프)</option>
+                </select>
+                <input type="text" id="staffAccount" placeholder="은행을 먼저 선택하세요" oninput="onInputAccount(this)" disabled>
+                <input type="text" id="staffPayDay" placeholder="급여일 (예: 매월 10일)" value="매월 10일">
+            </div>
+
+            <div style="background: var(--light-gray); padding: 10px; border-radius: 10px; margin-bottom: 6px; border:1px solid var(--border); margin-top:4px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <div style="font-size: 11px; font-weight: 700; color: var(--primary-dark);">📅 고정 계약 초기 스케줄 (더블교대 지원)</div>
+                    <label class="switch-label" style="font-size: 10px; padding: 2px 6px; background: #e0e7ff; border-color: #c7d2fe;">
+                        <input type="checkbox" id="enableDetailDays" onchange="toggleDetailDaysLayout()"> ⚙️ 요일별 시간 개별 설정
+                    </label>
+                </div>
+                
+                <div class="day-selector">
+                    <div class="day-btn" data-day="0" onclick="toggleDayBtn(this)">일</div>
+                    <div class="day-btn" data-day="1" onclick="toggleDayBtn(this)">월</div>
+                    <div class="day-btn" data-day="2" onclick="toggleDayBtn(this)">화</div>
+                    <div class="day-btn" data-day="3" onclick="toggleDayBtn(this)">수</div>
+                    <div class="day-btn" data-day="4" onclick="toggleDayBtn(this)">목</div>
+                    <div class="day-btn" data-day="5" onclick="toggleDayBtn(this)">금</div>
+                    <div class="day-btn" data-day="6" onclick="toggleDayBtn(this)">토</div>
+                </div>
+
+                <div id="bulkTimeContainer">
+                    <div class="flex-group" style="margin-bottom:4px;">
+                        <span style="font-size: 11px; font-weight: 700; color: var(--primary-dark); width: 35px; line-height: 28px;">근무1</span>
+                        <select id="fixedStart" style="background:white; flex:1;" onchange="autoMatchFixedAssignment()"></select>
+                        <select id="fixedEnd" style="background:white; flex:1;" onchange="autoMatchFixedAssignment()"></select>
+                        <select id="fixedBreak" style="background:white; flex:1;">
+                            <option value="0">휴식 없음</option>
+                            <option value="0.5">30분</option>
+                            <option value="1" selected>1시간</option>
+                            <option value="1.5">1.5시간</option>
+                            <option value="2">2시간</option>
+                        </select>
+                    </div>
+                    <div class="flex-group" style="margin-bottom:4px;">
+                        <span style="font-size: 11px; font-weight: 700; color: #ea580c; width: 35px; line-height: 28px;">근무2</span>
+                        <select id="fixedStart2" style="background:white; flex:1; border-color: #ffedd5;" onchange="autoMatchFixedAssignment()"></select>
+                        <select id="fixedEnd2" style="background:white; flex:1; border-color: #ffedd5;" onchange="autoMatchFixedAssignment()"></select>
+                        <select id="fixedBreak2" style="background:white; flex:1; border-color: #ffedd5;">
+                            <option value="0" selected>휴무/없음</option>
+                            <option value="0.5">30분</option>
+                            <option value="1">1시간</option>
+                            <option value="1.5">1.5시간</option>
+                            <option value="2">2시간</option>
+                        </select>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <span style="font-size: 11px; font-weight: 700; color: var(--primary-dark);">⏰ 타임 배정:</span>
+                        <select id="fixedAssignment" style="background:white; max-width:120px;">
+                            <option value="풀타임" selected>풀타임</option>
+                            <option value="점심">점심</option>
+                            <option value="저녁">저녁</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="detailTimeContainer" style="display:none; flex-direction:column; gap:4px; margin-top:6px; border-top: 1px dashed var(--border); padding-top: 6px;">
+                    <div style="font-size:10px; color:var(--gray); font-weight:bold; margin-bottom:2px;">선택한 요일의 세부 시간을 입력하세요 (근무2 미입력시 휴무처리):</div>
+                    <div id="detailDaysFieldsList" style="display:flex; flex-direction:column; gap:6px;"></div>
+                </div>
+            </div>
+
+            <div class="form-grid" style="grid-template-columns: repeat(2, 1fr); align-items: center;">
+                <div>
+                    <label style="font-size: 11px; color: var(--gray); font-weight: 700;">📅 입사일자</label>
+                    <input type="date" id="joinDate">
+                </div>
+                <div>
+                    <label style="font-size: 11px; color: var(--gray); font-weight: 700;">🚪 상태 설정</label>
+                    <select id="workStatus" onchange="toggleQuitDateInput(this.value, 'quitDateContainer')">
+                        <option value="재직">재직 중</option>
+                        <option value="퇴사">퇴사</option>
+                    </select>
+                </div>
+                <div id="quitDateContainer" style="display: none; grid-column: span 2;">
+                    <label style="font-size: 11px; color: #ef4444; font-weight: 700;">📅 퇴사일자</label>
+                    <input type="date" id="quitDate">
+                </div>
+            </div>
+
+            <div id="historyDateGroup" style="margin-top: 6px; background: #fffbeb; padding: 8px; border: 1px dashed #f59e0b; border-radius: 8px; display:none;">
+                <label style="font-size: 11px; font-weight: 700; color: #b45309;">📅 수정 사항 반영 기준일 (과거 기록 보존용):</label>
+                <input type="date" id="historyBaseDate" style="background: white; margin-top: 2px;">
+                <div style="font-size: 9px; color: #b45309; margin-top: 4px;">※ 아래의 스케줄, 시급/급여, 4대보험 및 소득세/지방세 설정 변경 사항이 이 날짜부터 적용됩니다.</div>
+            </div>
+
+            <!-- 🔥 기타 수당 및 공제 입력 폼 -->
+            <div class="form-grid" style="grid-template-columns: repeat(2, 1fr); align-items: center; margin-top:8px;">
+                <div>
+                    <label style="font-size: 11px; color: var(--primary); font-weight: 700;">➕ 기타 추가수당 (해고수당 등)</label>
+                    <input type="text" id="extraAllowance" value="0원" class="money-input" style="background:white;" onfocus="clearFormat(this)" onblur="formatInput(this)">
+                </div>
+                <div>
+                    <label style="font-size: 11px; color: #ef4444; font-weight: 700;">➖ 기타 공제액 (식대/가불 등)</label>
+                    <input type="text" id="extraDeduction" value="0원" class="money-input" style="background:white;" onfocus="clearFormat(this)" onblur="formatInput(this)">
+                </div>
+            </div>
+            
+            <!-- 🔥 세금 및 수당 설정 섹션 시각적 정리 (좌측 정렬 및 그리드 레이아웃) -->
+                        <div style="background: var(--light-gray); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-top: 8px;">
+                <div style="font-size: 12px; font-weight: 700; color: var(--primary-dark); margin-bottom: 10px;">⚙️ 수당 및 공제(세금) 상세 설정</div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <label class="switch-label" style="justify-content:flex-start; padding:10px 12px;"><input type="checkbox" id="checkWeekly" style="width:auto; margin-right:4px;"> 주휴수당</label>
+                    <label class="switch-label" style="justify-content:flex-start; padding:10px 12px;"><input type="checkbox" id="checkWeeklyCap" checked style="width:auto; margin-right:4px;"> 주휴 40h 상한</label>
+                    
+                    <label class="switch-label" style="justify-content:flex-start; padding:10px 12px;"><input type="checkbox" id="checkTax33" onchange="handleTaxOptionChange('tax33')" style="width:auto; margin-right:4px;"> 3.3% 원천징수</label>
+                    <label class="switch-label" style="justify-content:flex-start; padding:10px 12px;"><input type="checkbox" id="checkFourIns" onchange="handleTaxOptionChange('fourIns')" style="width:auto; margin-right:4px;"> 4대보험 가입</label>
+                </div>
+                
+                <input type="text" id="reportedSalary" class="money-input" style="width: 100%; font-size:12px; display:none; padding:10px; margin-top:8px; border: 1px solid var(--primary);" placeholder="🛡️ 4대보험 공단 신고 보수월액 입력" onfocus="clearFormat(this)" onblur="formatInput(this)">
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;">
+                    <label class="switch-label" style="background:#e0f2fe; border-color:#bae6fd; justify-content:flex-start; padding:10px 12px;"><input type="checkbox" id="checkIncomeTax" onchange="handleTaxOptionChange('incomeTax')" style="width:auto; margin-right:4px;"> 근로소득세</label>
+                    <label class="switch-label" id="labelLocalTax" style="display:none; justify-content:flex-start; padding:10px 12px;"><input type="checkbox" id="checkLocalTax" checked style="width:auto; margin-right:4px;"> 지방세 (10%)</label>
+                </div>
+                
+                <select id="dependentsCount" style="display:none; width: 100%; padding: 10px; font-size: 12px; background: white; border: 1px solid #bae6fd; border-radius: 8px; margin-top:8px;">
+                    <option value="1">👨‍👩‍👧‍👦 부양가족 수: 본인 포함 1명</option>
+                    <option value="2">👨‍👩‍👧‍👦 부양가족 수: 본인 포함 2명</option>
+                    <option value="3">👨‍👩‍👧‍👦 부양가족 수: 본인 포함 3명</option>
+                    <option value="4">👨‍👩‍👧‍👦 부양가족 수: 본인 포함 4명</option>
+                    <option value="5">👨‍👩‍👧‍👦 부양가족 수: 5명 이상</option>
+                </select>
+            </div>
+
+
+            <div style="display:flex; justify-content: flex-end; gap:6px; margin-top: 10px;">
+                <button class="btn btn-outline" id="btnCancelEdit" style="padding: 8px 12px; display:none;" onclick="cancelEdit()">작성 취소</button>
+                <button class="btn btn-primary" id="btnSaveStaff" style="padding: 8px 16px;" onclick="saveStaffSubmit()">정보 저장 (명부 등록)</button>
+            </div>
+        </div>
+
+        <div class="card" style="border-top: 4px solid var(--primary-dark);">
+            <h2>🏢 매장 사업자 정보 및 직인 설정 (명세서용)</h2>
+            <div class="form-grid" style="grid-template-columns: repeat(2, 1fr);">
+                <input type="text" id="compName" placeholder="사업장 상호명" value="까몬 포항양덕점">
+                <input type="text" id="compOwner" placeholder="대표자 성명" value="홍길동">
+                <input type="text" id="compRegNo" placeholder="사업자등록번호" value="530-12-34567" style="grid-column: span 2;" oninput="onInputRegNo(this)">
+            </div>
+            <div style="margin-top: 6px; background: white; padding: 10px; border-radius: 8px; border: 1px dashed var(--border);">
+                <span style="font-size: 11px; font-weight: 700; color: var(--primary-dark); display: block; margin-bottom: 4px;">🏵️ 대표자 도장/직인 이미지 등록</span>
+                <input type="file" id="stampFileInput" accept="image/*" onchange="handleStampUpload(this)">
+                <div id="stampPreviewContainer" style="margin-top: 6px; display: none; align-items: center; gap: 10px;">
+                    <img id="stampPreview" src="" style="width: 40px; height: 40px; object-fit: contain; border: 1px dashed #cbd5e1; padding: 2px;">
+                    <span style="font-size: 11px; color: var(--success); font-weight: bold;">도장 이미지가 등록되었습니다. (자동 저장됨)</span>
+                </div>
+            </div>
+            <button class="btn btn-secondary" style="width:100%; margin-top:8px; padding:8px;" onclick="saveCompanyInfo()">🏢 사업자 정보 저장</button>
+        </div>
+    </div>
+
+    <div id="pageProfit" class="page-content">
+        <div class="card" style="border-top: 4px solid var(--primary);">
+            <h2>📊 매장 지출 비용 및 종합 손익 분석</h2>
+            
+            <div style="display:grid; grid-template-columns: 1fr; gap:8px; margin-bottom:8px;">
+                <div style="background: #f8fafc; padding: 10px; border-radius: 10px; border:1px solid var(--border);">
+                    <div style="font-weight:700; font-size:12px; color:var(--primary-dark); margin-bottom:4px;">🎯 목표 / 예산 설정</div>
+                    <div class="form-grid" style="grid-template-columns: repeat(2, 1fr);">
+                        <div>
+                            <label style="font-size: 10px; color: var(--gray);">목표 매출액</label>
+                            <input type="text" id="targetSales" value="30,000,000원" class="money-input" style="background:white;" onfocus="clearFormat(this)" onblur="formatInput(this)">
+                        </div>
+                        <div>
+                            <label style="font-size: 10px; color: var(--gray);">예산 원재료비</label>
+                            <input type="text" id="costIngredients" value="10,500,000원" class="money-input" style="background:white;" onfocus="clearFormat(this)" onblur="formatInput(this)">
+                        </div>
+                        <div>
+                            <label style="font-size: 10px; color: var(--gray);">예산 임대료</label>
+                            <input type="text" id="costRent" value="2,000,000원" class="money-input" style="background:white;" onfocus="clearFormat(this)" onblur="formatInput(this)">
+                        </div>
+                        <div>
+                            <label style="font-size: 10px; color: var(--gray);">예산 공과금</label>
+                            <input type="text" id="costUtilities" value="1,500,000원" class="money-input" style="background:white;" onfocus="clearFormat(this)" onblur="formatInput(this)">
+                        </div>
+                    </div>
+                </div>
+
+                <div style="background: #fdfaf0; padding: 10px; border-radius: 10px; border:1px solid #fbcfe8;">
+                    <div style="font-weight:700; font-size:12px; color:#b45309; margin-bottom:4px;">💵 실제 확정 실적 입력</div>
+                    <div class="form-grid" style="grid-template-columns: repeat(2, 1fr);">
+                        <div>
+                            <label style="font-size: 10px; color: #b45309;">실제 매출액</label>
+                            <input type="text" id="actualSales" value="0원" class="money-input" style="background:white; border-color:#fbcfe8;" onfocus="clearFormat(this)" onblur="formatInput(this)">
+                        </div>
+                        <div>
+                            <label style="font-size: 10px; color: #b45309;">실제 원재료비</label>
+                            <input type="text" id="actualIngredients" value="0원" class="money-input" style="background:white; border-color:#fbcfe8;" onfocus="clearFormat(this)" onblur="formatInput(this)">
+                        </div>
+                        <div>
+                            <label style="font-size: 10px; color: #b45309;">실제 임대료</label>
+                            <input type="text" id="actualRent" value="0원" class="money-input" style="background:white; border-color:#fbcfe8;" onfocus="clearFormat(this)" onblur="formatInput(this)">
+                        </div>
+                        <div>
+                            <label style="font-size: 10px; color: #b45309;">실제 공과금</label>
+                            <input type="text" id="actualUtilities" value="0원" class="money-input" style="background:white; border-color:#fbcfe8;" onfocus="clearFormat(this)" onblur="formatInput(this)">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="lcReportArea" class="dashboard-grid"></div>
+        </div>
+
+        <div class="card">
+            <h2>
+                <span>👥 정산 및 법정 명세서 발행용 급여 목록</span>
+                <button class="btn btn-outline" style="padding: 4px 8px; font-size: 11px; font-weight: bold; color: var(--primary); border-color: var(--primary);" onclick="refreshPayrollList()">🔄 목록 갱신</button>
+            </h2>
+            <div id="payrollStaffListArea"></div>
+        </div>
+    </div>
+
+    <!-- 🔥 잘림 문제 해결을 위한 래퍼 속성 변경 -->
+    <div id="pdfHideWrapper" style="position: absolute; left: -9999px; top: -9999px; width: 794px;">
+        <div id="payslipPdfStructure" style="width: 794px; height: 1123px; padding: 50px 40px; background: #ffffff; color: #334155; font-family: 'Noto Sans KR', sans-serif; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; align-items: stretch;">
+            <div style="width: 100%;">
+                
+                <div style="text-align: center; margin-bottom: 35px;">
+                    <h1 style="font-size: 26px; font-weight: 700; color: #0a2540; letter-spacing: 6px; margin: 0 0 6px 0; padding: 0;">급 여 명 세 서</h1>
+                    <p style="font-size: 13px; color: #64748b; font-weight: 500; margin: 0; padding: 0;" id="pdfDateTitle"></p>
+                </div>
+                
+                <h4 style="font-size: 13px; font-weight: 700; color: #0a2540; margin-bottom: 8px; border-left: 3px solid #635bff; padding-left: 6px;">1. 기본 인적사항 및 사업장 정보</h4>
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 13px; background: #ffffff; border: 1px solid #cbd5e1;">
+                    <tr>
+                        <td style="border: 1px solid #cbd5e1; background: #f8fafc; padding: 10px 12px; font-weight: 700; color: #475569; width: 16%;">교부 사업장</td>
+                        <td style="border: 1px solid #cbd5e1; padding: 10px 12px; width: 34%; color: #1e293b; font-weight: 500;" id="pdfCompName"></td>
+                        <td style="border: 1px solid #cbd5e1; background: #f8fafc; padding: 10px 12px; font-weight: 700; color: #475569; width: 16%;">성 명 / 직급</td>
+                        <td style="border: 1px solid #cbd5e1; padding: 10px 12px; width: 34%; color: #1e293b; font-weight: 700;" id="pdfName"></td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #cbd5e1; background: #f8fafc; padding: 10px 12px; font-weight: 700; color: #475569;">대표자명</td>
+                        <td style="border: 1px solid #cbd5e1; padding: 10px 12px; color: #1e293b;" id="pdfCompOwner"></td>
+                        <td style="border: 1px solid #cbd5e1; background: #f8fafc; padding: 10px 12px; font-weight: 700; color: #475569;">생년월일</td>
+                        <td style="border: 1px solid #cbd5e1; padding: 10px 12px; color: #1e293b;" id="pdfBirth"></td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #cbd5e1; background: #f8fafc; padding: 10px 12px; font-weight: 700; color: #475569;">사업자번호</td>
+                        <td style="border: 1px solid #cbd5e1; padding: 10px 12px; color: #1e293b;" id="pdfCompRegNo"></td>
+                        <td style="border: 1px solid #cbd5e1; background: #f8fafc; padding: 10px 12px; font-weight: 700; color: #475569;">입사일자</td>
+                        <td style="border: 1px solid #cbd5e1; padding: 10px 12px; color: #1e293b;" id="pdfJoinDate"></td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #cbd5e1; background: #f8fafc; padding: 10px 12px; font-weight: 700; color: #475569;">급여지급일</td>
+                        <td style="border: 1px solid #cbd5e1; padding: 10px 12px; color: #635bff; font-weight: 700;" id="pdfCompPayDay"></td>
+                        <td style="border: 1px solid #cbd5e1; background: #f8fafc; padding: 10px 12px; font-weight: 700; color: #475569;">급여수령계좌</td>
+                        <td style="border: 1px solid #cbd5e1; padding: 10px 12px; font-size: 12px; color: #1e293b;" id="pdfAccount"></td>
+                    </tr>
+                </table>
+
+                <h4 style="font-size: 13px; font-weight: 700; color: #0a2540; margin-bottom: 8px; border-left: 3px solid #635bff; padding-left: 6px;">2. 근로시간 수 및 산출 기초 필수 표기란</h4>
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 12px; text-align: center; border: 1px solid #cbd5e1;">
+                    <thead>
+                        <tr style="background: #f1f5f9; color: #334155;">
+                            <th style="border: 1px solid #cbd5e1; padding: 10px; width: 25%; font-weight: 700;">구분</th>
+                            <th style="border: 1px solid #cbd5e1; padding: 10px; width: 25%; font-weight: 700;">총 근로시간 수</th>
+                            <th style="border: 1px solid #cbd5e1; padding: 10px; width: 50%; font-weight: 700; text-align: left; padding-left: 15px;">산출 기초 계산식</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="color: #1e293b;">
+                            <td style="border: 1px solid #cbd5e1; padding: 10px; font-weight: 700; background: #f8fafc;">소정 계약 근로</td>
+                            <td style="border: 1px solid #cbd5e1; padding: 10px; font-weight: 500;" id="pdfNormalHours">0시간</td>
+                            <td style="border: 1px solid #cbd5e1; padding: 10px; text-align: left; padding-left: 15px; font-weight: 500;" id="pdfNormalHoursCalc">-</td>
+                        </tr>
+                        <tr style="color: #1e293b;">
+                            <td style="border: 1px solid #cbd5e1; padding: 10px; font-weight: 700; background: #f8fafc;">추가 근무</td>
+                            <td style="border: 1px solid #cbd5e1; padding: 10px; font-weight: 500;" id="pdfExtraHours">0시간</td>
+                            <td style="border: 1px solid #cbd5e1; padding: 10px; text-align: left; padding-left: 15px; font-weight: 500;" id="pdfExtraCalc">-</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h4 style="font-size: 13px; font-weight: 700; color: #0a2540; margin-bottom: 8px; border-left: 3px solid #635bff; padding-left: 6px;">3. 급여 항목별 세부 지급 및 공제 명세</h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; font-size: 13px;">
+                    
+                    <div>
+                        <table style="width: 100%; border-collapse: collapse; border: 1px solid #cbd5e1;">
+                            <thead>
+                                <tr style="background: #eff6ff; border-bottom: 2px solid #1e3a8a;">
+                                    <th style="padding: 10px; text-align: left; font-weight: 700; color: #1e3a8a; font-size: 13px;" colspan="2">지급 내역 항목 (Gross Pay)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr style="border-bottom: 1px solid #e2e8f0; color: #334155;">
+                                    <td style="padding: 10px; font-weight: 500;">기본급 (계약 소정분)</td>
+                                    <td style="text-align: right; padding: 10px; font-weight: 700; font-variant-numeric: tabular-nums;" id="pdfBasePay">0원</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #e2e8f0; color: #334155;">
+                                    <td style="padding: 10px; font-weight: 500;">추가근무수당</td>
+                                    <td style="text-align: right; padding: 10px; font-weight: 700; font-variant-numeric: tabular-nums;" id="pdfExtraPay">0원</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #e2e8f0; color: #334155;">
+                                    <td style="padding: 10px; font-weight: 500;">주휴수당</td>
+                                    <td style="text-align: right; padding: 10px; font-weight: 700; font-variant-numeric: tabular-nums;" id="pdfWeeklyPay">0원</td>
+                                </tr>
+                                <!-- 🔥 기타수당 행 추가 -->
+                                <tr id="pdfExtraAllowanceRow" style="border-bottom: 1px solid #e2e8f0; color: #334155; display:none;">
+                                    <td style="padding: 10px; font-weight: 500;">기타 수당 (해고예고 등)</td>
+                                    <td style="text-align: right; padding: 10px; font-weight: 700; font-variant-numeric: tabular-nums;" id="pdfExtraAllowance">0원</td>
+                                </tr>
+                                <tr style="background: #f8fafc; font-weight: 700;">
+                                    <td style="padding: 11px 10px; color: #1e293b;">지급액 총계</td>
+                                    <td style="text-align: right; padding: 11px 10px; color: #1e3a8a; font-variant-numeric: tabular-nums; font-size: 14px;" id="pdfGrossPay">0원</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div>
+                        <table style="width: 100%; border-collapse: collapse; border: 1px solid #cbd5e1;">
+                            <thead>
+                                <tr style="background: #fef2f2; border-bottom: 2px solid #991b1b;">
+                                    <th style="padding: 10px; text-align: left; font-weight: 700; color: #991b1b; font-size: 13px;" colspan="2">공제 내역 항목 (Deduction)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pdfDeductionTbody">
+                                <!-- 🔥 JS에서 조건부로 생성하여 삽입됨 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 24px 20px; border-radius: 12px; text-align: center; margin-bottom: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <span style="font-size: 14px; color: #166534; font-weight: 700; display: block; width: 100%; text-align: center; letter-spacing: 0.5px;">차인 지급액 (근로자 실수령액)</span>
+                    <h2 style="font-size: 30px; color: #15803d; font-weight: 700; margin-top: 6px; display: block; width: 100%; text-align: center; letter-spacing: 0.5px;" id="pdfNetPay">0원</h2>
+                </div>
+                
+                <div style="text-align: center; font-size: 15px; font-weight: 700; color: #0a2540; margin-top: 30px; padding-bottom: 5px; letter-spacing: 1px; position: relative; display: inline-block; left: 50%; transform: translateX(-50%);">
+                    <span id="pdfSignatureText"></span>
+                    <div style="position: absolute; right: -25px; top: -12px; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center;">
+                        <img id="pdfStampImg" src="" style="width: 100%; height: 100%; object-fit: contain; display: none;">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    // 🔥 아이폰(iOS) 로컬 파일 실행 시 localStorage 보안 에러 우회용 안전 저장소
+    const safeStorage = {
+        memoryStore: {},
+        isAvailable: function() {
+            try {
+                const test = '__storage_test__';
+                localStorage.setItem(test, test);
+                localStorage.removeItem(test);
+                return true;
+            } catch(e) {
+                return false;
+            }
+        },
+        getItem: function(key) {
+            if (this.isAvailable()) {
+                return localStorage.getItem(key);
+            } else {
+                return this.memoryStore[key] || null;
+            }
+        },
+        setItem: function(key, value) {
+            if (this.isAvailable()) {
+                try {
+                    localStorage.setItem(key, value);
+                } catch(e) {
+                    this.memoryStore[key] = value;
+                }
+            } else {
+                this.memoryStore[key] = value;
+            }
+        }
+    };
+
+    // 🔥 초간단 근로소득세 계산기 (부양가족 비례 약식)
+    function calculateSimpleIncomeTax(monthlyGross, dependents) {
+        if (monthlyGross < 1060000) return 0;
+        let taxBase = monthlyGross - 1060000;
+        taxBase -= (dependents - 1) * 150000; 
+        if (taxBase <= 0) return 0;
+        let tax = taxBase * 0.03; 
+        return Math.floor(tax / 10) * 10;
+    }
+
+    let currentMode = null;
+
+    function selectMode(mode) {
+        if (mode === 'admin') {
+            let savedPwd = safeStorage.getItem('ccamon_admin_pwd');
+            if (!savedPwd) {
+                let newPwd = prompt("초기 관리자 암호를 설정해주세요:");
+                if (newPwd) {
+                    safeStorage.setItem('ccamon_admin_pwd', newPwd);
+                    alert("암호가 설정되었습니다. 관리자 모드로 접속합니다.");
+                    enterApp('admin');
+                }
+            } else {
+                let inputPwd = prompt("관리자 암호를 입력해주세요:");
+                if (inputPwd === savedPwd) {
+                    enterApp('admin');
+                } else if (inputPwd !== null) {
+                    alert("암호가 일치하지 않습니다.");
+                }
+            }
+        } else {
+            enterApp('staff');
+        }
+    }
+
+    function enterApp(mode) {
+        currentMode = mode;
+        document.getElementById('loginOverlay').style.display = 'none';
+        document.body.style.overflow = 'auto'; 
+        
+        if (mode === 'staff') {
+            document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+            document.getElementById('editCard').style.display = 'none'; 
+        } else {
+            document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
+        }
+    }
+
+    function changeAdminPassword() {
+        let savedPwd = safeStorage.getItem('ccamon_admin_pwd');
+        let currentPwd = prompt("현재 관리자 암호를 입력해주세요:");
+        if (currentPwd === savedPwd) {
+            let newPwd = prompt("새로운 관리자 암호를 입력해주세요:");
+            if (newPwd) {
+                safeStorage.setItem('ccamon_admin_pwd', newPwd);
+                alert("관리자 암호가 성공적으로 변경되었습니다.");
+            } else {
+                alert("암호 변경이 취소되었습니다.");
+            }
+        } else if (currentPwd !== null) {
+            alert("현재 암호가 일치하지 않습니다.");
+        }
+    }
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyBMT8jGvVO_5yEFqx6EsW4s33nZ57ML3RQ",
+        authDomain: "camon-erp-504a3.firebaseapp.com",
+        databaseURL: "https://camon-erp-504a3-default-rtdb.firebaseio.com",
+        projectId: "camon-erp-504a3",
+        storageBucket: "camon-erp-504a3.firebasestorage.app",
+        messagingSenderId: "418118987779",
+        appId: "1:418118987779:web:25eea2463bf1ff3ecc1e36",
+        measurementId: "G-TWBG9PT4FX"
+    };
+
+    let useFirebase = false;
+    let dbRef = null;
+
+    if (firebaseConfig.apiKey !== "") {
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        dbRef = database.ref('ccamon_v14_db');
+        useFirebase = true;
+    }
+
+    function onInputPhone(el) {
+        let val = el.value.replace(/[^0-9]/g, '');
+        if (val.length < 4) { el.value = val; }
+        else if (val.length < 8) { el.value = val.substr(0, 3) + '-' + val.substr(3); }
+        else { el.value = val.substr(0, 3) + '-' + val.substr(3, 4) + '-' + val.substr(7, 4); }
+    }
+    function onInputRegNo(el) {
+        let val = el.value.replace(/[^0-9]/g, '');
+        if (val.length < 4) { el.value = val; }
+        else if (val.length < 6) { el.value = val.substr(0, 3) + '-' + val.substr(3); }
+        else { el.value = val.substr(0, 3) + '-' + val.substr(3, 2) + '-' + val.substr(5, 5); }
+    }
+
+    const bankRules = {
+        "신한은행":   { mask: [3, 3, 6],       max: 12 }, 
+        "국민은행":   { mask: [6, 2, 6],       max: 14 }, 
+        "우리은행":   { mask: [4, 3, 6],       max: 13 }, 
+        "하나은행":   { mask: [3, 6, 5],       max: 14 }, 
+        "농협은행":   { mask: [3, 4, 4, 2],    max: 13 }, 
+        "기업은행":   { mask: [3, 6, 2, 3],    max: 14 }, 
+        "케이뱅크":   { mask: [3, 3, 7],       max: 13 }, 
+        "카카오뱅크": { mask: [4, 2, 7],       max: 13 }, 
+        "토스뱅크":   { mask: [4, 4, 4],       max: 12 }, 
+        "우체국":     { mask: [6, 2, 5],       max: 13 }, 
+        "새마을금고": { mask: [4, 2, 7],       max: 13 }, 
+        "신협":       { mask: [5, 3, 6],       max: 14 }, 
+        "수협은행":   { mask: [3, 4, 4, 2],    max: 13 }, 
+        "부산은행":   { mask: [3, 4, 4, 2],    max: 13 }, 
+        "대구은행":   { mask: [3, 4, 4, 2],    max: 13 }, 
+        "경남은행":   { mask: [3, 2, 8],       max: 13 }, 
+        "광주은행":   { mask: [3, 3, 6],       max: 12 }, 
+        "전북은행":   { mask: [3, 3, 7],       max: 13 }, 
+        "제주은행":   { mask: [2, 2, 2, 6],    max: 12 }, 
+        "씨티은행":   { mask: [3, 6, 3],       max: 12 }  
+    };
+
+    function onBankChange() {
+        const bankSel = document.getElementById('staffBank').value;
+        const accInp = document.getElementById('staffAccount');
+        accInp.value = ''; 
+        if(bankSel) {
+            accInp.disabled = false;
+            accInp.placeholder = bankRules[bankSel] ? `${bankSel} 형식에 맞춰 숫자만 입력` : "자유 형식 입력 가능 (하이픈 직접 입력)";
+        } else {
+            accInp.disabled = true;
+            accInp.placeholder = "은행을 먼저 선택하세요";
+        }
+    }
+
+    function onInputAccount(el) {
+        const bankSel = document.getElementById('staffBank').value;
+        if(!bankSel || !bankRules[bankSel]) return;
+        const rule = bankRules[bankSel];
+        let val = el.value.replace(/[^0-9]/g, ''); 
+        if(val.length > rule.max) val = val.substring(0, rule.max);
+        let result = []; let startIndex = 0;
+        for(let len of rule.mask) {
+            if(val.length > startIndex) { result.push(val.substring(startIndex, startIndex + len)); startIndex += len; } else break;
+        }
+        el.value = result.join('-');
+    }
+
+    function handleTaxOptionChange(selectedOption) {
+        const checkTax33 = document.getElementById('checkTax33');
+        const checkFourIns = document.getElementById('checkFourIns');
+        const checkIncomeTax = document.getElementById('checkIncomeTax');
+        const repSal = document.getElementById('reportedSalary');
+        
+        if(selectedOption === 'tax33' && checkTax33.checked) {
+            checkFourIns.checked = false;
+            checkIncomeTax.checked = false;
+            toggleIncomeTaxOptions();
+        }
+        else if((selectedOption === 'fourIns' || selectedOption === 'incomeTax')) {
+            if(checkFourIns.checked || checkIncomeTax.checked) {
+                checkTax33.checked = false;
+            }
+        }
+        
+        if(selectedOption === 'incomeTax') toggleIncomeTaxOptions();
+
+        if(checkFourIns.checked) {
+            repSal.style.display = 'block';
+        } else {
+            repSal.style.display = 'none';
+            repSal.value = '';
+        }
+    }
+
+    function toggleIncomeTaxOptions() {
+        const checkIncomeTax = document.getElementById('checkIncomeTax');
+        const depCount = document.getElementById('dependentsCount');
+        const labelLocal = document.getElementById('labelLocalTax');
+        
+        if(checkIncomeTax.checked) {
+            depCount.style.display = 'block';
+            labelLocal.style.display = 'flex';
+        } else {
+            depCount.style.display = 'none';
+            labelLocal.style.display = 'none';
+        }
+    }
+
+    const timeOptions = ["휴무"];
+    for(let i=9; i<=22; i++) { timeOptions.push(`${String(i).padStart(2,'0')}:00`); timeOptions.push(`${String(i).padStart(2,'0')}:30`); }
+
+    // 🔥 2026-2027 모든 공휴일 달력 표시 (대체공휴일 포함)
+    const holidayMap = {
+        "2026-01-01": "신정", "2026-02-16": "설날연휴", "2026-02-17": "설날", "2026-02-18": "설날연휴", "2026-03-01": "삼일절", "2026-03-02": "대체공휴일", "2026-05-01": "근로자의날", "2026-05-05": "어린이날", "2026-05-24": "부처님오신날", "2026-05-25": "대체공휴일", "2026-06-03": "지방선거", "2026-06-06": "현충일", "2026-08-15": "광복절", "2026-08-17": "대체공휴일", "2026-09-24": "추석연휴", "2026-09-25": "추석", "2026-09-26": "추석연휴", "2026-10-03": "개천절", "2026-10-05": "대체공휴일", "2026-10-09": "한글날", "2026-12-25": "성탄절",
+        "2027-01-01": "신정", "2027-02-06": "설날연휴", "2027-02-07": "설날", "2027-02-08": "설날연휴", "2027-02-09": "대체공휴일", "2027-03-01": "삼일절", "2027-05-01": "근로자의날", "2027-05-05": "어린이날", "2027-05-13": "부처님오신날", "2027-06-06": "현충일", "2027-08-15": "광복절", "2027-08-16": "대체공휴일", "2027-09-14": "추석연휴", "2027-09-15": "추석", "2027-09-16": "추석연휴", "2027-10-03": "개천절", "2027-10-09": "한글날", "2027-10-11": "대체공휴일", "2027-12-25": "성탄절"
+    };
+
+    let db = JSON.parse(safeStorage.getItem('ccamon_v14_db')) || { staff: [], schedule: {}, memos: {}, expenses: {}, actualExpenses: {}, company: {}, trash: [] };
+    if(!db.company) db.company = { name: "까몬 포항양덕점", owner: "홍길동", regNo: "530-12-34567" };
+    if(!db.actualExpenses) db.actualExpenses = { sales: 0, ingredients: 0, rent: 0, utilities: 0 };
+    if(!db.trash) db.trash = [];
+    
+    let selectedDate = "";
+    let staffFilter = "working";
+    let currentEditIdx = null;
+    let activeCalendarStaffFilters = new Set(); 
+
+    let monthBackup = {};
+    let monthBackupTarget = "";
+    let staffBackupForUndo = null;
+
+    let stampBase64 = safeStorage.getItem('ccamon_stamp_img') || "";
+
+    function handleStampUpload(input) {
+        const file = input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            stampBase64 = e.target.result;
+            safeStorage.setItem('ccamon_stamp_img', stampBase64);
+            showStampPreview();
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function showStampPreview() {
+        const previewCont = document.getElementById('stampPreviewContainer');
+        const previewImg = document.getElementById('stampPreview');
+        if (stampBase64) {
+            previewImg.src = stampBase64;
+            previewCont.style.display = 'flex';
+        } else {
+            previewCont.style.display = 'none';
+        }
+    }
+
+    function calculateAssignment(startTimeStr, endTimeStr) {
+        if (!startTimeStr || !endTimeStr || startTimeStr === "휴무" || endTimeStr === "휴무") return "풀타임";
+        let startHour = parseInt(startTimeStr.split(':')[0]);
+        let startMin = parseInt(startTimeStr.split(':')[1]);
+        let endHour = parseInt(endTimeStr.split(':')[0]);
+        let endMin = parseInt(endTimeStr.split(':')[1]);
+        let startVal = startHour + (startMin === 30 ? 0.5 : 0);
+        let endVal = endHour + (endMin === 30 ? 0.5 : 0);
+        if (startVal <= 10 && endVal >= 20) return "풀타임"; 
+        if (startVal < 12) return "점심"; 
+        return "저녁";
+    }
+
+    function autoMatchFixedAssignment() {
+        let start = document.getElementById('fixedStart').value;
+        let end = document.getElementById('fixedEnd').value;
+        document.getElementById('fixedAssignment').value = calculateAssignment(start, end);
+    }
+
+    function toggleDetailDaysLayout() {
+        const isDetail = document.getElementById('enableDetailDays').checked;
+        document.getElementById('bulkTimeContainer').style.display = isDetail ? 'none' : 'block';
+        document.getElementById('detailTimeContainer').style.display = isDetail ? 'flex' : 'none';
+        if (isDetail) renderDetailDaysFields();
+    }
+
+    function renderDetailDaysFields() {
+        const listContainer = document.getElementById('detailDaysFieldsList');
+        listContainer.innerHTML = '';
+        const dayNames = ["일", "월", "화", "수", "목", "금", "토"];
+        
+        let currentCustomTimes = {};
+        if (currentEditIdx !== null && db.staff[currentEditIdx].customDayTimes) {
+            currentCustomTimes = db.staff[currentEditIdx].customDayTimes;
+        }
+
+        for (let i = 0; i < 7; i++) {
+            const row = document.createElement('div');
+            row.className = 'day-time-config-row';
+            row.id = `detailRow_day_${i}`;
+
+            const startVal = currentCustomTimes[i]?.start || "10:00";
+            // 🔥 기본값 변경 (22:00 -> 21:00)
+            const endVal = currentCustomTimes[i]?.end || "21:00";
+            const breakVal = currentCustomTimes[i]?.breakTime || "1";
+            
+            const startVal2 = currentCustomTimes[i]?.start2 || "휴무";
+            const endVal2 = currentCustomTimes[i]?.end2 || "휴무";
+            const breakVal2 = currentCustomTimes[i]?.breakTime2 || "0";
+
+            let startOptions = timeOptions.map(t => t !== "휴무" ? `<option value="${t}" ${startVal===t?'selected':''}>${t}</option>` : '').join('');
+            let endOptions = timeOptions.map(t => t !== "휴무" ? `<option value="${t}" ${endVal===t?'selected':''}>${t}</option>` : '').join('');
+            let breakOptions = `
+                <option value="0" ${breakVal=="0"?'selected':''}>휴식무</option>
+                <option value="0.5" ${breakVal=="0.5"?'selected':''}>30분</option>
+                <option value="1" ${breakVal=="1"?'selected':''}>1시간</option>
+                <option value="1.5" ${breakVal=="1.5"?'selected':''}>1.5h</option>
+                <option value="2" ${breakVal=="2"?'selected':''}>2시간</option>
+            `;
+            
+            let startOptions2 = timeOptions.map(t => `<option value="${t}" ${startVal2===t?'selected':''}>${t}</option>`).join('');
+            let endOptions2 = timeOptions.map(t => `<option value="${t}" ${endVal2===t?'selected':''}>${t}</option>`).join('');
+            let breakOptions2 = `
+                <option value="0" ${breakVal2=="0"?'selected':''}>휴무/없음</option>
+                <option value="0.5" ${breakVal2=="0.5"?'selected':''}>30분</option>
+                <option value="1" ${breakVal2=="1"?'selected':''}>1시간</option>
+                <option value="1.5" ${breakVal2=="1.5"?'selected':''}>1.5h</option>
+                <option value="2" ${breakVal2=="2"?'selected':''}>2시간</option>
+            `;
+
+            row.innerHTML = `
+                <div style="width: 100%; display:flex; align-items:center; gap:4px; margin-bottom:2px;">
+                    <div class="day-time-config-label">${dayNames[i]}</div>
+                    <span style="font-size:10px; color:var(--primary); font-weight:bold; width:25px;">근무1</span>
+                    <select id="detailStart_${i}" style="background:#f8fafc; flex:1; padding:4px; font-size:11px;">${startOptions}</select>
+                    <select id="detailEnd_${i}" style="background:#f8fafc; flex:1; padding:4px; font-size:11px;">${endOptions}</select>
+                    <select id="detailBreak_${i}" style="background:#f8fafc; flex:1; padding:4px; font-size:11px;">${breakOptions}</select>
+                </div>
+                <div style="width: 100%; display:flex; align-items:center; gap:4px; padding-left: 25px;">
+                    <span style="font-size:10px; color:#ea580c; font-weight:bold; width:25px;">근무2</span>
+                    <select id="detailStart2_${i}" style="background:#fff7ed; flex:1; padding:4px; font-size:11px; border-color:#ffedd5;">${startOptions2}</select>
+                    <select id="detailEnd2_${i}" style="background:#fff7ed; flex:1; padding:4px; font-size:11px; border-color:#ffedd5;">${endOptions2}</select>
+                    <select id="detailBreak2_${i}" style="background:#fff7ed; flex:1; padding:4px; font-size:11px; border-color:#ffedd5;">${breakOptions2}</select>
+                </div>
+            `;
+            listContainer.appendChild(row);
+        }
+    }
+
+    function switchPage(pageId) {
+        document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+        event.currentTarget.classList.add('active');
+        renderStaff();
+    }
+
+    function parseNumber(str) { return parseInt(String(str).replace(/[^0-9]/g, '')) || 0; }
+    function formatNumber(num) { return Number(num).toLocaleString() + "원"; }
+    function formatInput(el) { let val = parseNumber(el.value); el.value = formatNumber(val); renderStaff(); }
+    function clearFormat(el) { let val = parseNumber(el.value); el.value = val === 0 ? "" : val; }
+
+    function saveDB() {
+        safeStorage.setItem('ccamon_v14_db', JSON.stringify(db));
+        document.getElementById('cloudData').value = btoa(unescape(encodeURIComponent(JSON.stringify(db))));
+        if(useFirebase && dbRef) {
+            dbRef.set(db).catch(err => {
+                console.error("Firebase 저장 실패:", err);
+                alert("🚨 클라우드 저장에 실패했습니다. 파이어베이스 '규칙(Rules)'이 막혀있는지 확인해주세요.");
+            });
+        }
+    }
+
+    function copyCloudData() {
+        const cloudDataInput = document.getElementById('cloudData');
+        cloudDataInput.select(); document.execCommand('copy');
+        alert('백업 동기화 코드가 클립보드에 복사되었습니다.');
+    }
+
+    function loadCloudData() {
+        let code = prompt('동기화할 백업 코드를 붙여넣어 주세요:');
+        if(!code) return;
+        try {
+            code = code.replace(/\s+/g, '');
+            const decoded = decodeURIComponent(escape(atob(code)));
+            const parsed = JSON.parse(decoded);
+            
+            if(!parsed.staff) parsed.staff = [];
+            if(!parsed.schedule) parsed.schedule = {};
+            if(!parsed.memos) parsed.memos = {};
+            if(!parsed.company) parsed.company = { name: "까몬 포항양덕점", owner: "홍길동", regNo: "530-12-34567" };
+            if(!parsed.actualExpenses) parsed.actualExpenses = { sales: 0, ingredients: 0, rent: 0, utilities: 0 };
+            if(!parsed.trash) parsed.trash = [];
+
+            parsed.staff.forEach(s => {
+                if (s.scheduleHistory && s.scheduleHistory.length > 0) {
+                    s.scheduleHistory.forEach(h => {
+                        if (h.weekly === undefined) h.weekly = s.weekly || false;
+                        if (h.weeklyCap === undefined) h.weeklyCap = s.weeklyCap !== false;
+                        if (h.tax33 === undefined) h.tax33 = s.tax33 || false;
+                        if (h.fourIns === undefined) h.fourIns = s.fourIns || false;
+                        if (h.incomeTax === undefined) h.incomeTax = s.incomeTax || false;
+                        if (h.dependents === undefined) h.dependents = s.dependents || 1;
+                        if (h.localTax === undefined) h.localTax = s.localTax !== false;
+                        if (h.extraAllowance === undefined) h.extraAllowance = s.extraAllowance || 0;
+                        if (h.extraDeduction === undefined) h.extraDeduction = s.extraDeduction || 0;
+                    });
+                }
+            });
+
+            if(parsed.staff && parsed.schedule) {
+                db = parsed; saveDB(); initUI();
+                alert('🔄 이전 데이터가 수동으로 완벽히 복원되었으며 클라우드와 동기화되었습니다!');
+            } else { alert('올바르지 않은 데이터 규격입니다. 코드를 다시 확인해주세요.'); }
+        } catch(e) { 
+            console.error(e);
+            alert('🚨 코드 분석에 실패했습니다.\n코드가 복사 중 잘렸을 수 있습니다.\n\n해결책: 수동복원 버튼 아래의 [백업 CSV로 복원] 버튼을 눌러 이전에 다운받은 엑셀 백업본을 선택하시면 완벽하게 복원됩니다!'); 
+        }
+    }
+
+    function importCSVBackup(input) {
+        const file = input.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const lines = e.target.result.split('\n');
+                if(!lines[0].includes("구분") || !lines[0].includes("이름")) return alert("🚨 복원할 수 없는 파일입니다.");
+                let importedStaffCount = 0;
+                for(let i = 1; i < lines.length; i++) {
+                    let row = lines[i].trim(); if(!row) continue;
+                    let parts = row.split(',');
+                    if(parts[0] === "직원카드") {
+                        let name = parts[1]; let birth = parts[2]; let position = parts[3]; let payType = parts[4];
+                        let amount = parseInt(parts[5]) || 0; let overtimeHourlyPay = parseInt(parts[6]) || amount;
+                        let joinDate = parts[7]; let status = parts[8] || "재직";
+                        let existingIdx = db.staff.findIndex(s => s.name === name);
+                        let staffObj = {
+                            name, birth, phone: "-", position, payType, amount, overtimeHourlyPay, joinDate, status, quitDate: "-", payDay: "매월 10일",
+                            bank: "", account: "", fixedDays: [], fixedStart: "10:00", fixedEnd: "21:00", fixedBreak: "1", assignment: "풀타임",
+                            weekly: false, weeklyCap: true, tax33: false, fourIns: false, incomeTax: false, dependents: 1, localTax: false, customDayTimes: {}, 
+                            scheduleHistory: [{ startDate: "2000-01-01", fixedDays: [], fixedStart: "10:00", fixedEnd: "21:00", fixedBreak: "1", assignment: "풀타임", customDayTimes: {}, weekly: false, weeklyCap: true, tax33: false, fourIns: false, incomeTax: false, dependents: 1, localTax: false, payType: payType, amount: amount, overtimeHourlyPay: overtimeHourlyPay, reportedSalary: 0, extraAllowance: 0, extraDeduction: 0 }]
+                        };
+                        if(existingIdx > -1) { Object.assign(db.staff[existingIdx], { birth, position, payType, amount, overtimeHourlyPay, joinDate, status }); } 
+                        else { db.staff.push(staffObj); }
+                        importedStaffCount++;
+                    }
+                }
+                if(importedStaffCount > 0) { saveDB(); initUI(); alert(`📂 총 ${importedStaffCount}명의 직원 데이터 복원 완료.`); }
+            } catch(err) { alert("오류가 발생했습니다."); }
+        };
+        reader.readAsText(file, "UTF-8"); input.value = "";
+    }
+
+    function saveCompanyInfo() {
+        db.company = { name: document.getElementById('compName').value, owner: document.getElementById('compOwner').value, regNo: document.getElementById('compRegNo').value };
+        saveDB(); alert('🏢 사업자 매장 정보가 정상 저장되었습니다.');
+    }
+
+    function handlePositionChange() {
+        if (document.getElementById('staffPosition').value === "사장님") {
+            document.getElementById('payType').value = "해당없음"; togglePlaceholder();
+            document.getElementById('checkWeekly').checked = false; document.getElementById('checkWeeklyCap').checked = true; 
+            document.getElementById('checkTax33').checked = false; document.getElementById('checkFourIns').checked = false;
+            document.getElementById('checkIncomeTax').checked = false;
+            document.getElementById('staffBank').value = ""; onBankChange(); document.getElementById('staffAccount').value = ""; document.getElementById('staffPayDay').value = "지급대상아님";
+            document.getElementById('reportedSalary').style.display = 'none'; document.getElementById('reportedSalary').value = '';
+            toggleIncomeTaxOptions();
+        }
+    }
+
+    function togglePlaceholder() {
+        const type = document.getElementById('payType').value;
+        const amountInput = document.getElementById('payAmount');
+        const amountLabel = document.getElementById('payAmountLabel');
+        const overtimeContainer = document.getElementById('overtimePayContainer');
+
+        if (type === "해당없음") {
+            amountLabel.innerText = "기본 급여 금액"; amountInput.value = "0원"; amountInput.disabled = true; overtimeContainer.style.display = "none";
+        } else if (type === "월급") {
+            amountLabel.innerText = "기본 고정 월급"; amountInput.disabled = false; overtimeContainer.style.display = "block";
+            document.querySelector('#overtimePayContainer span').innerText = '⏰ 월급/일급 전용: 추가 근무 시 정산할 기준 시급';
+            if(parseNumber(amountInput.value) === 0 || parseNumber(amountInput.value) === 10030) amountInput.value = "2,500,000원";
+        } else if (type === "일급") {
+            amountLabel.innerText = "기본 고정 일급"; amountInput.disabled = false; overtimeContainer.style.display = "block";
+            document.querySelector('#overtimePayContainer span').innerText = '⏰ 월급/일급 전용: 추가 근무 시 정산할 기준 시급';
+            if(parseNumber(amountInput.value) === 0 || parseNumber(amountInput.value) === 10030) amountInput.value = "100,000원";
+        } else {
+            amountLabel.innerText = "기본 계약 시급"; amountInput.disabled = false; overtimeContainer.style.display = "none";
+            if(parseNumber(amountInput.value) === 0) amountInput.value = "10,030원";
+        }
+    }
+
+    function toggleQuitDateInput(status, containerId) { document.getElementById(containerId).style.display = (status === '퇴사') ? 'block' : 'none'; }
+    function refreshPayrollList() { renderStaff(); alert("🔄 급여 명세서 발행 목록이 최신 스케줄 기준으로 새로고침되었습니다."); }
+    function toggleDayBtn(el) { el.classList.toggle('selected'); }
+    function getSelectedDays() { const days = []; document.querySelectorAll('.day-btn.selected').forEach(btn => days.push(parseInt(btn.getAttribute('data-day')))); return days; }
+    function setSelectedDays(daysArray) { document.querySelectorAll('.day-btn').forEach(btn => { if(daysArray && daysArray.includes(parseInt(btn.getAttribute('data-day')))) btn.classList.add('selected'); else btn.classList.remove('selected'); }); }
+
+    function changeStaffFilter(filter) {
+        staffFilter = filter;
+        ['filterAll_m', 'filterWorking_m', 'filterQuit_m', 'filterTrash_m'].forEach(id => { 
+            let el = document.getElementById(id); 
+            if(el) {
+                el.className = "btn btn-outline";
+                if(id === 'filterTrash_m') { el.style.borderColor = '#ef4444'; el.style.color = '#ef4444'; el.style.background = 'white'; }
+            }
+        });
+        
+        let actEl = document.getElementById(filter === 'all' ? 'filterAll_m' : (filter === 'working' ? 'filterWorking_m' : (filter === 'quit' ? 'filterQuit_m' : 'filterTrash_m'))); 
+        if(actEl) {
+            if (filter === 'trash') {
+                actEl.className = "btn";
+                actEl.style.background = '#ef4444';
+                actEl.style.color = 'white';
+            } else {
+                actEl.className = "btn btn-primary";
+            }
+        }
+        renderStaff();
+    }
+
+    function init() {
+        if (useFirebase) {
+            document.getElementById('syncStatusBadge').innerText = "클라우드 연동 켜짐";
+            document.getElementById('syncStatusBadge').style.background = "#dbeafe";
+            document.getElementById('syncStatusBadge').style.color = "#2563eb";
+            
+            dbRef.on('value', (snapshot) => {
+                const data = snapshot.val();
+                if(data) {
+                    db = data;
+                    if(!db.staff) db.staff = [];
+                    if(!db.schedule) db.schedule = {};
+                    if(!db.memos) db.memos = {};
+                    if(!db.company) db.company = { name: "까몬 포항양덕점", owner: "홍길동", regNo: "530-12-34567" };
+                    if(!db.actualExpenses) db.actualExpenses = { sales: 0, ingredients: 0, rent: 0, utilities: 0 };
+                    if(!db.trash) db.trash = [];
+                } 
+                else if (db.staff && db.staff.length > 0) { dbRef.set(db); } 
+                else { db = { staff: [], schedule: {}, memos: {}, company: { name: "까몬 포항양덕점", owner: "홍길동", regNo: "530-12-34567" }, expenses: {}, actualExpenses: { sales: 0, ingredients: 0, rent: 0, utilities: 0 }, trash: [] }; }
+                initUI();
+            }, (error) => {
+                console.error("Firebase read failed:", error);
+                alert("🚨 파이어베이스 접근 차단됨!\n구글 파이어베이스 '규칙(Rules)' 탭에서 .read와 .write를 모두 true로 변경해주세요.");
+                initUI();
+            });
+        } else {
+            initUI();
+        }
+    }
+
+    function initUI() {
+        const y = document.getElementById('yearSel'); const m = document.getElementById('monthSel');
+        if(y.options.length === 0) {
+            for(let i=2026; i<=2027; i++) y.add(new Option(i+'년', i));
+            for(let i=1; i<=12; i++) m.add(new Option(i+'월', i));
+            y.value = new Date().getFullYear(); m.value = new Date().getMonth() + 1;
+        }
+        
+        const fs = document.getElementById('fixedStart'); const fe = document.getElementById('fixedEnd');
+        const fs2 = document.getElementById('fixedStart2'); const fe2 = document.getElementById('fixedEnd2');
+        const as = document.getElementById('addSchedStart'); const ae = document.getElementById('addSchedEnd');
+        
+        if(fs.options.length === 0) {
+            timeOptions.forEach(t => { 
+                if(t!=="휴무") { fs.add(new Option(t, t)); fe.add(new Option(t, t)); as.add(new Option(t, t)); ae.add(new Option(t, t)); } 
+                fs2.add(new Option(t, t)); fe2.add(new Option(t, t));
+            });
+            // 🔥 기본값 변경 (22:00 -> 21:00)
+            fs.value = "10:00"; fe.value = "21:00"; 
+            fs2.value = "휴무"; fe2.value = "휴무";
+            as.value = "10:00"; ae.value = "21:00";
+        }
+
+        document.getElementById('joinDate').value = new Date().toISOString().substring(0, 10);
+        document.getElementById('historyBaseDate').value = new Date().toISOString().substring(0, 10);
+        
+        if(db.company) { document.getElementById('compName').value = db.company.name || ""; document.getElementById('compOwner').value = db.company.owner || ""; document.getElementById('compRegNo').value = db.company.regNo || ""; }
+        if(db.targetSales) document.getElementById('targetSales').value = formatNumber(db.targetSales);
+        if(db.expenses?.ingredients) document.getElementById('costIngredients').value = formatNumber(db.expenses.ingredients);
+        if(db.expenses?.rent) document.getElementById('costRent').value = formatNumber(db.expenses.rent);
+        if(db.expenses?.utilities) document.getElementById('costUtilities').value = formatNumber(db.expenses.utilities);
+        if(db.actualExpenses?.sales) document.getElementById('actualSales').value = formatNumber(db.actualExpenses.sales);
+        if(db.actualExpenses?.ingredients) document.getElementById('actualIngredients').value = formatNumber(db.actualExpenses.ingredients);
+        if(db.actualExpenses?.rent) document.getElementById('actualRent').value = formatNumber(db.actualExpenses.rent);
+        if(db.actualExpenses?.utilities) document.getElementById('actualUtilities').value = formatNumber(db.actualExpenses.utilities);
+
+        showStampPreview(); 
+        updateStaffDropdowns();
+        renderCalendarFilters();
+        renderCalendar();
+        renderStaff();
+    }
+
+    function renderCalendarFilters() {
+        const container = document.getElementById('calendarStaffFilter');
+        const workingStaff = db.staff.filter(s => s.status !== '퇴사');
+        let html = `<span style="font-size: 11px; font-weight: 700; color: var(--primary);">👀 필터:</span>`;
+        
+        let allChecked = true;
+        workingStaff.forEach(s => { if(!activeCalendarStaffFilters.has(s.name) && activeCalendarStaffFilters.size > 0) allChecked = false; });
+        if(activeCalendarStaffFilters.size === 0) allChecked = true;
+
+        html += `<label class="switch-label" style="background:#e0e7ff; border-color:#c7d2fe;"><input type="checkbox" id="filterAllStaff" onchange="toggleAllStaffFilters(this.checked)" ${allChecked?'checked':''}> 전체보기</label>`;
+
+        workingStaff.forEach(s => {
+            const isChecked = activeCalendarStaffFilters.size === 0 || activeCalendarStaffFilters.has(s.name);
+            html += `<label class="switch-label"><input type="checkbox" class="staff-filter-chk" value="${s.name}" ${isChecked ? 'checked' : ''} onchange="updateStaffFilters()"> ${s.name}</label>`;
+        });
+        container.innerHTML = html;
+    }
+
+    function updateStaffFilters() {
+        activeCalendarStaffFilters.clear();
+        const checkboxes = document.querySelectorAll('.staff-filter-chk');
+        let allChecked = true;
+        let anyChecked = false;
+
+        checkboxes.forEach(chk => {
+            if(chk.checked) {
+                activeCalendarStaffFilters.add(chk.value);
+                anyChecked = true;
+            } else {
+                allChecked = false;
+            }
+        });
+        
+        if(!anyChecked) {
+            activeCalendarStaffFilters.add("__NONE__");
+        } else if (allChecked) {
+            activeCalendarStaffFilters.clear();
+        }
+
+        document.getElementById('filterAllStaff').checked = allChecked;
+        renderCalendar();
+    }
+
+    function toggleAllStaffFilters(checked) {
+        activeCalendarStaffFilters.clear();
+        if (!checked) {
+            activeCalendarStaffFilters.add("__NONE__");
+        }
+        renderCalendarFilters();
+        renderCalendar();
+    }
+
+    function updateStaffDropdowns() {
+        const select = document.getElementById('addSchedStaffName'); select.innerHTML = '';
+        const workingStaff = db.staff.filter(s => s.status !== '퇴사');
+        if(workingStaff.length === 0) select.add(new Option("등록된 직원 없음", ""));
+        else workingStaff.forEach(s => { select.add(new Option((s.position ? `[${s.position}] ` : '') + s.name, s.name)); });
+    }
+
+    function getStaffConfigForDate(staffObj, targetDateStr) {
+        if (!staffObj.scheduleHistory || staffObj.scheduleHistory.length === 0) {
+            return { 
+                fixedDays: staffObj.fixedDays || [], 
+                fixedStart: staffObj.fixedStart || "10:00", 
+                fixedEnd: staffObj.fixedEnd || "21:00", 
+                fixedBreak: staffObj.fixedBreak || "1", 
+                fixedStart2: staffObj.fixedStart2 || "휴무", 
+                fixedEnd2: staffObj.fixedEnd2 || "휴무", 
+                fixedBreak2: staffObj.fixedBreak2 || "0", 
+                assignment: calculateAssignment(staffObj.fixedStart || "10:00", staffObj.fixedEnd || "21:00"),
+                customDayTimes: staffObj.customDayTimes || {},
+                weekly: staffObj.weekly || false,
+                weeklyCap: staffObj.weeklyCap !== false,
+                tax33: staffObj.tax33 || false,
+                fourIns: staffObj.fourIns || false,
+                incomeTax: staffObj.incomeTax || false,
+                dependents: staffObj.dependents || 1,
+                localTax: staffObj.localTax !== false,
+                payType: staffObj.payType,
+                amount: staffObj.amount,
+                overtimeHourlyPay: staffObj.overtimeHourlyPay || 10030,
+                reportedSalary: staffObj.reportedSalary || 0,
+                extraAllowance: staffObj.extraAllowance || 0,
+                extraDeduction: staffObj.extraDeduction || 0
+            };
+        }
+        let targetTime = new Date(targetDateStr + "T00:00:00").getTime();
+        let applicableConfigs = staffObj.scheduleHistory.filter(h => new Date(h.startDate + "T00:00:00").getTime() <= targetTime);
+        
+        let activeConfig = applicableConfigs.length > 0 
+            ? applicableConfigs.sort((a, b) => new Date(b.startDate + "T00:00:00").getTime() - new Date(a.startDate + "T00:00:00").getTime())[0] 
+            : staffObj.scheduleHistory[0];
+            
+        let result = Object.assign({}, activeConfig);
+        if(result.fixedStart && result.fixedEnd) result.assignment = calculateAssignment(result.fixedStart, result.fixedEnd);
+        
+        if (result.weekly === undefined) result.weekly = staffObj.weekly || false;
+        if (result.weeklyCap === undefined) result.weeklyCap = staffObj.weeklyCap !== false;
+        if (result.tax33 === undefined) result.tax33 = staffObj.tax33 || false;
+        if (result.fourIns === undefined) result.fourIns = staffObj.fourIns || false;
+        if (result.incomeTax === undefined) result.incomeTax = staffObj.incomeTax || false;
+        if (result.dependents === undefined) result.dependents = staffObj.dependents || 1;
+        if (result.localTax === undefined) result.localTax = staffObj.localTax !== false;
+        
+        if (result.payType === undefined) result.payType = staffObj.payType;
+        if (result.amount === undefined) result.amount = staffObj.amount;
+        if (result.overtimeHourlyPay === undefined) result.overtimeHourlyPay = staffObj.overtimeHourlyPay || 10030;
+        if (result.reportedSalary === undefined) result.reportedSalary = staffObj.reportedSalary || 0;
+        if (result.extraAllowance === undefined) result.extraAllowance = staffObj.extraAllowance || 0;
+        if (result.extraDeduction === undefined) result.extraDeduction = staffObj.extraDeduction || 0;
+
+        return result;
+    }
+
+    function syncFixedScheduleToCalendar(staffObj) {
+        const currentYear = document.getElementById('yearSel').value;
+        const currentMonth = document.getElementById('monthSel').value;
+        const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+
+        for(let i = 1; i <= daysInMonth; i++) {
+            const dStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(i).padStart(2, '0')}`; 
+            const dayOfWeek = new Date(currentYear, currentMonth - 1, i).getDay();
+            if(!db.schedule[dStr]) db.schedule[dStr] = {};
+            if(staffObj.joinDate && staffObj.joinDate !== "-" && dStr < staffObj.joinDate) { delete db.schedule[dStr][staffObj.name]; continue; }
+            if(staffObj.status === '퇴사' && staffObj.quitDate && staffObj.quitDate !== "-" && dStr > staffObj.quitDate) { delete db.schedule[dStr][staffObj.name]; continue; } 
+            else if (staffObj.status === '퇴사' && (!staffObj.quitDate || staffObj.quitDate === "-")) { delete db.schedule[dStr][staffObj.name]; continue; }
+
+            const config = getStaffConfigForDate(staffObj, dStr);
+            if(config && config.fixedDays && config.fixedDays.includes(dayOfWeek)) {
+                if(config.customDayTimes && config.customDayTimes[dayOfWeek]) {
+                    const cTime = config.customDayTimes[dayOfWeek];
+                    if(!db.schedule[dStr][staffObj.name]) {
+                        db.schedule[dStr][staffObj.name] = { 
+                            start: cTime.start, end: cTime.end, breakTime: parseFloat(cTime.breakTime || 0), 
+                            start2: cTime.start2 || "휴무", end2: cTime.end2 || "휴무", breakTime2: parseFloat(cTime.breakTime2 || 0), 
+                            urgent: false, assignment: calculateAssignment(cTime.start, cTime.end) 
+                        };
+                    }
+                } else {
+                    if(!db.schedule[dStr][staffObj.name]) {
+                        db.schedule[dStr][staffObj.name] = { 
+                            start: config.fixedStart, end: config.fixedEnd, breakTime: parseFloat(config.fixedBreak || 0), 
+                            start2: config.fixedStart2 || "휴무", end2: config.fixedEnd2 || "휴무", breakTime2: parseFloat(config.fixedBreak2 || 0), 
+                            urgent: false, assignment: config.assignment 
+                        };
+                    }
+                }
+            } else {
+                if(db.schedule[dStr] && db.schedule[dStr][staffObj.name] && !db.schedule[dStr][staffObj.name].userCustom) delete db.schedule[dStr][staffObj.name];
+            }
+        }
+    }
+
+    function clearMonthSchedule() {
+        if(!confirm("현재 선택된 달의 캘린더 배정을 모두 초기화하시겠습니까? (이후 되돌리기 가능)")) return;
+        const y = document.getElementById('yearSel').value;
+        const m = String(document.getElementById('monthSel').value).padStart(2, '0');
+        const prefix = `${y}-${m}-`;
+
+        monthBackup = {};
+        monthBackupTarget = prefix;
+
+        Object.keys(db.schedule).forEach(date => {
+            if(date.startsWith(prefix)) {
+                monthBackup[date] = JSON.parse(JSON.stringify(db.schedule[date]));
+                delete db.schedule[date];
+            }
+        });
+
+        document.getElementById('undoMonthBtn').style.display = 'inline-flex';
+        saveDB();
+        renderCalendar();
+    }
+
+    function undoClearMonthSchedule() {
+        if(!monthBackupTarget) return;
+        Object.keys(monthBackup).forEach(date => {
+            db.schedule[date] = monthBackup[date];
+        });
+        monthBackup = {};
+        monthBackupTarget = "";
+        document.getElementById('undoMonthBtn').style.display = 'none';
+        saveDB();
+        renderCalendar();
+        alert("스케줄 초기화가 정상적으로 실행 취소되었습니다.");
+    }
+
+    function clearAllStaffList() {
+        if(!confirm("직원 명부를 완전히 초기화하시겠습니까? (휴지통이 아닌 전체 백업 상태로 이동되며 되돌리기가 가능합니다)")) return;
+        staffBackupForUndo = JSON.parse(JSON.stringify(db.staff));
+        db.staff = [];
+        document.getElementById('undoStaffBtn').style.display = 'inline-flex';
+        saveDB();
+        updateStaffDropdowns();
+        renderCalendarFilters();
+        renderCalendar();
+    }
+
+    function undoClearStaffList() {
+        if(!staffBackupForUndo) return;
+        db.staff = staffBackupForUndo;
+        staffBackupForUndo = null;
+        document.getElementById('undoStaffBtn').style.display = 'none';
+        saveDB();
+        updateStaffDropdowns();
+        renderCalendarFilters();
+        renderCalendar();
+        alert("직원 목록이 정상적으로 복구되었습니다.");
+    }
+
+    function refreshCalendarList() {
+        Object.keys(db.schedule).forEach(dStr => {
+            Object.keys(db.schedule[dStr]).forEach(stName => { if(!db.schedule[dStr][stName].userCustom) delete db.schedule[dStr][stName]; });
+        });
+        saveDB();
+        renderCalendar();
+        alert("🔄 스케줄 캘린더가 최신 계약 기준으로 동기화 및 새로고침 되었거나 사용자 정의 편집 스케줄만 보존되었습니다.");
+    }
+
+    function renderStaff() {
+        const mgtArea = document.getElementById('managementStaffListArea');
+        const payrollArea = document.getElementById('payrollStaffListArea');
+        mgtArea.innerHTML = ''; payrollArea.innerHTML = '';
+        const currentYear = document.getElementById('yearSel').value; const currentMonth = String(document.getElementById('monthSel').value).padStart(2, '0');
+        let totalMonthPayroll = 0;
+
+        if(db.staff.length === 0 && staffFilter !== 'trash') {
+            mgtArea.innerHTML = `<div style="text-align:center; padding:20px; font-size:12px; color:var(--gray);">등록된 직원이 없습니다. 아래에서 새로 등록해주세요.</div>`;
+            payrollArea.innerHTML = `<div style="text-align:center; padding:20px; font-size:12px; color:var(--gray);">등록된 직원이 없습니다.</div>`;
+        }
+
+        db.staff.forEach((s, idx) => {
+            if(!s.status) s.status = "재직"; if(!s.position) s.position = "알바생"; if(s.overtimeHourlyPay === undefined) s.overtimeHourlyPay = 10030;
+            if(!s.customDayTimes) s.customDayTimes = {};
+            
+            if(staffFilter === 'working' && s.status !== '재직') return; 
+            if(staffFilter === 'quit' && s.status !== '퇴사') return;
+            if(staffFilter === 'trash') return; 
+            
+            syncFixedScheduleToCalendar(s);
+            let normalHours = 0; let extraHours = 0; let totalShifts = 0; 
+            
+            let dailyGrossPays = []; 
+            let dailyTax33Amt = 0; let totalWeeklyPay = 0;
+            
+            let accBasePay = 0; 
+            let accExtraPay = 0;
+
+            Object.keys(db.schedule).forEach(date => {
+                if(date.startsWith(`${currentYear}-${currentMonth}-`)) {
+                    let record = db.schedule[date][s.name];
+                    let hasWorkedToday = false; let dayNetHours = 0;
+
+                    if(record && record.start && record.start !== "휴무" && record.end !== "휴무") {
+                        let sh = parseInt(record.start.split(':')[0]) + (record.start.split(':')[1]==='30'? 0.5:0); let eh = parseInt(record.end.split(':')[0]) + (record.end.split(':')[1]==='30'? 0.5:0);
+                        if(eh > sh) { dayNetHours += Math.max(0, (eh - sh) - parseFloat(record.breakTime || 0)); hasWorkedToday = true; }
+                    }
+                    if(record && record.start2 && record.start2 !== "휴무" && record.end2 !== "휴무") {
+                        let sh2 = parseInt(record.start2.split(':')[0]) + (record.start2.split(':')[1]==='30'? 0.5:0); let eh2 = parseInt(record.end2.split(':')[0]) + (record.end2.split(':')[1]==='30'? 0.5:0);
+                        if(eh2 > sh2) { dayNetHours += Math.max(0, (eh2 - sh2) - parseFloat(record.breakTime2 || 0)); hasWorkedToday = true; }
+                    }
+
+                    if(hasWorkedToday) {
+                        if(record.urgent === true) extraHours += dayNetHours; else normalHours += dayNetHours;
+                        totalShifts++; 
+                        
+                        const dayConfig = getStaffConfigForDate(s, date);
+                        let dayPay = 0;
+                        
+                        let curPayType = dayConfig.payType || s.payType;
+                        let curAmount = dayConfig.amount !== undefined ? dayConfig.amount : s.amount;
+                        let curOvertime = dayConfig.overtimeHourlyPay !== undefined ? dayConfig.overtimeHourlyPay : (s.overtimeHourlyPay || curAmount);
+
+                        if (curPayType === "시급") {
+                            dayPay = dayNetHours * curAmount;
+                            if(record.urgent === true) accExtraPay += dayPay; else accBasePay += dayPay;
+                        } else if (curPayType === "일급") {
+                            if(record.urgent === true) { dayPay = dayNetHours * curOvertime; accExtraPay += dayPay; } 
+                            else { dayPay = curAmount; accBasePay += dayPay; }
+                        } else if (curPayType === "월급") {
+                            if(record.urgent === true) { dayPay = dayNetHours * curOvertime; accExtraPay += dayPay; }
+                        }
+                        
+                        dailyGrossPays.push({ date: date, pay: dayPay, config: dayConfig });
+                    }
+                }
+            });
+
+            let totalHours = normalHours + extraHours; let basePay = 0, extraPay = 0, grossPay = 0;
+
+            let lastDayOfMonth = new Date(currentYear, currentMonth, 0).getDate();
+            let monthEndConfig = getStaffConfigForDate(s, `${currentYear}-${currentMonth}-${String(lastDayOfMonth).padStart(2, '0')}`);
+
+            if (s.payType !== "해당없음") {
+                let endAmount = monthEndConfig.amount !== undefined ? monthEndConfig.amount : s.amount;
+
+                if (s.payType === "시급") {
+                    basePay = accBasePay; extraPay = accExtraPay;
+                    
+                    let daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+                    let weeksInMonth = daysInMonth / 7; let monthlyCapHours = 40 * weeksInMonth; 
+                    
+                    let minHoursRequired = 15 * weeksInMonth; 
+                    let cappedHoursForWeekly = (monthEndConfig.weeklyCap === false) ? totalHours : Math.min(totalHours, monthlyCapHours);
+                    totalWeeklyPay = (monthEndConfig.weekly && totalHours >= minHoursRequired) ? (cappedHoursForWeekly / 40) * 8 * endAmount : 0;
+                } else if (s.payType === "월급") {
+                    basePay = endAmount; extraPay = accExtraPay; totalWeeklyPay = 0; 
+                } else if (s.payType === "일급") {
+                    basePay = accBasePay; extraPay = accExtraPay; totalWeeklyPay = 0;
+                }
+                
+                let extAllow = monthEndConfig.extraAllowance || 0;
+                grossPay = Math.round(basePay + extraPay + totalWeeklyPay + extAllow); 
+                totalMonthPayroll += grossPay;
+            }
+
+            if (s.payType !== "해당없음") {
+                if (s.payType === "시급") {
+                    dailyGrossPays.forEach(item => {
+                        if (item.config.tax33) dailyTax33Amt += (item.pay * 0.033);
+                    });
+                    if (monthEndConfig.tax33) dailyTax33Amt += (totalWeeklyPay * 0.033);
+                } else {
+                    if (totalShifts > 0) {
+                        let avgDailyBasePay = basePay / totalShifts;
+                        dailyGrossPays.forEach(item => {
+                            let totalDayPay = item.pay + avgDailyBasePay;
+                            if (item.config.tax33) dailyTax33Amt += (totalDayPay * 0.033);
+                        });
+                    } else {
+                        if (monthEndConfig.tax33) dailyTax33Amt += (grossPay * 0.033);
+                    }
+                }
+            }
+
+            let finalTax33 = Math.round(dailyTax33Amt); 
+            let fourIns_Actual = 0;
+            let finalFourIns = 0;
+            
+            if (monthEndConfig.fourIns) {
+                fourIns_Actual = Math.round(grossPay * 0.0944);
+                if (monthEndConfig.reportedSalary && monthEndConfig.reportedSalary > 0) {
+                    finalFourIns = Math.round(monthEndConfig.reportedSalary * 0.0944);
+                } else {
+                    finalFourIns = fourIns_Actual;
+                }
+            }
+
+            let finalIncomeTax = 0;
+            let finalLocalTax = 0;
+            if (monthEndConfig.incomeTax) {
+                let taxBaseAmount = (monthEndConfig.reportedSalary && monthEndConfig.reportedSalary > 0) ? monthEndConfig.reportedSalary : grossPay;
+                
+                finalIncomeTax = calculateSimpleIncomeTax(taxBaseAmount, monthEndConfig.dependents || 1);
+                if (monthEndConfig.localTax) {
+                    finalLocalTax = Math.floor((finalIncomeTax * 0.1) / 10) * 10;
+                }
+            }
+            
+            let extDed = monthEndConfig.extraDeduction || 0;
+            let netPay = grossPay - finalTax33 - finalFourIns - finalIncomeTax - finalLocalTax - extDed;
+            
+            const latestConf = s.scheduleHistory ? s.scheduleHistory[s.scheduleHistory.length - 1] : s;
+            let fixedDaysStr = latestConf.fixedDays && latestConf.fixedDays.length > 0 ? latestConf.fixedDays.map(d=>["일","월","화","수","목","금","토"][d]).join(',') : "없음";
+            let displayPayDay = s.payType === "해당없음" ? "지급대상아님" : (s.payDay || "매월 10일");
+            
+            let curDispPayType = latestConf.payType || s.payType;
+            let curDispAmount = latestConf.amount !== undefined ? latestConf.amount : s.amount;
+            let curDispOvertime = latestConf.overtimeHourlyPay !== undefined ? latestConf.overtimeHourlyPay : s.overtimeHourlyPay;
+            let typeBadgeColor = curDispPayType === "해당없음" ? "#64748b" : (curDispPayType === "월급" ? "#ea580c" : (curDispPayType === "일급" ? "#0ea5e9" : "var(--primary)"));
+            let rightDisplayPay = curDispPayType === "해당없음" ? "0원 (해당없음)" : formatNumber(netPay);
+
+            let payrollWorkText = `⏱️ 월 근로: <strong>${totalHours}h</strong> (기본계약 ${normalHours}h / 추가 ${extraHours}h, 5인미만 연장가산 제외)`;
+            if (curDispPayType === '일급') payrollWorkText = `⏱️ 월 근로: <strong style="color:#0ea5e9;">${totalShifts}일 출근</strong> (총 ${totalHours}h / 일급제)`;
+
+            let isCapText = latestConf.weeklyCap !== false ? "주 40h 상한 적용" : "상한 한도 없음";
+            let extAllow = monthEndConfig.extraAllowance || 0;
+
+            mgtArea.innerHTML += `
+                <div class="staff-row" style="${currentEditIdx === idx ? 'border: 2px solid var(--primary); background:#f0efff;' : ''}">
+                    <div class="staff-main">
+                        <div>
+                            <strong style="font-size:13px;"><span style="color:var(--primary-dark)">[${s.position}]</span> ${s.name}</strong> 
+                            <span style="font-size:10px; color:white; background:${s.status==='재직'?'var(--success)':'#ef4444'}; padding:1px 4px; border-radius:4px;">${s.status}</span>
+                        </div>
+                        <div style="display:flex; gap:4px;">
+                            <button class="btn btn-primary" style="padding:4px 8px; font-size:11px;" onclick="startEditStaff(${idx})">수정</button>
+                            <button class="btn btn-danger" style="padding:4px 8px; font-size:11px;" onclick="deleteStaff(${idx})">삭제</button>
+                        </div>
+                    </div>
+                    <div style="font-size:11px; color:var(--gray); margin-top:4px; line-height: 1.3;">
+                        • 생년월일: ${s.birth || '미등록'} | 연락처: ${s.phone || '-'}<br>
+                        • 입사일자: <span style="color:var(--primary); font-weight:700;">${s.joinDate || '-'}</span><br>
+                        • 최근 급여형태: <strong style="color:var(--primary-dark)">${curDispPayType}</strong> (${curDispPayType==='해당없음'?'0원':formatNumber(curDispAmount)}) 
+                          ${(curDispPayType==='월급'||curDispPayType==='일급') ? `| <span style="color:#c2410c; font-weight:bold;">추가시급: ${formatNumber(curDispOvertime)}</span>` : ''}<br>
+                        • 주휴 설정: ${latestConf.weekly ? '지급함' : '지급안함'} (${isCapText})<br>
+                        • 급여일: ${displayPayDay} | 계좌: [${s.bank || '미등록'}] ${s.account || '정보없음'}<br>
+                        • 고정 스케줄: ${s.scheduleHistory ? s.scheduleHistory.length : 1}개 기록 | [${fixedDaysStr}] (${latestConf.fixedStart || '10:00'}~${latestConf.fixedEnd || '21:00'})${latestConf.fixedStart2 && latestConf.fixedStart2 !== '휴무' ? ` / 더블교대 (${latestConf.fixedStart2}~${latestConf.fixedEnd2})` : ''}
+                        ${s.status === '퇴사' ? `<br><span style="color:#ef4444; font-weight:700;">• 실제 퇴사일자: ${s.quitDate}</span>` : ''}
+                    </div>
+                </div>
+            `;
+
+            let pdfButtons = `<button class="btn btn-secondary" style="padding:3px 6px; font-size:10px;" onclick="downloadPayslipPDF(${idx}, 'actual', ${normalHours}, ${extraHours}, ${basePay}, ${extraPay}, ${totalWeeklyPay}, ${extAllow}, ${grossPay}, ${finalTax33}, ${finalFourIns}, ${finalIncomeTax}, ${finalLocalTax}, ${extDed}, ${netPay}, ${totalShifts}, 0)">⚖️ 명세서 PDF</button>`;
+
+            if (monthEndConfig.fourIns && (monthEndConfig.reportedSalary || 0) > 0) {
+                pdfButtons = `
+                    <div style="display:flex; flex-direction:column; gap:4px;">
+                        <button class="btn btn-secondary" style="padding:3px 6px; font-size:10px; text-align:left;" 
+                            onclick="downloadPayslipPDF(${idx}, 'real_pay', ${normalHours}, ${extraHours}, ${basePay}, ${extraPay}, ${totalWeeklyPay}, ${extAllow}, ${grossPay}, ${finalTax33}, ${finalFourIns}, ${finalIncomeTax}, ${finalLocalTax}, ${extDed}, ${netPay}, ${totalShifts}, ${monthEndConfig.reportedSalary})">
+                            ⚖️ 실제 지급용 명세서 <span style="color:#94a3b8;">(실제급여 - 신고보수공제)</span>
+                        </button>
+                        <button class="btn btn-outline" style="padding:3px 6px; font-size:10px; border-color:var(--primary); color:var(--primary); text-align:left;" 
+                            onclick="downloadPayslipPDF(${idx}, 'report_only', ${normalHours}, ${extraHours}, ${basePay}, ${extraPay}, ${totalWeeklyPay}, ${extAllow}, ${grossPay}, ${finalTax33}, ${finalFourIns}, ${finalIncomeTax}, ${finalLocalTax}, ${extDed}, ${netPay}, ${totalShifts}, ${monthEndConfig.reportedSalary})">
+                            🏢 공단 신고용 명세서 <span style="color:#a5b4fc;">(신고급여 - 신고보수공제)</span>
+                        </button>
+                        <button class="btn btn-outline" style="padding:3px 6px; font-size:10px; border-color:#8b5cf6; color:#8b5cf6; text-align:left;" 
+                            onclick="downloadPayslipPDF(${idx}, 'standard', ${normalHours}, ${extraHours}, ${basePay}, ${extraPay}, ${totalWeeklyPay}, ${extAllow}, ${grossPay}, ${finalTax33}, ${fourIns_Actual}, ${finalIncomeTax}, ${finalLocalTax}, ${extDed}, ${grossPay - finalTax33 - fourIns_Actual - finalIncomeTax - finalLocalTax - extDed}, ${totalShifts}, 0)">
+                            📊 원칙 정산용 명세서 <span style="color:#c4b5fd;">(실제급여 - 실제급여공제)</span>
+                        </button>
+                    </div>
+                `;
+            }
+
+            payrollArea.innerHTML += `
+                <div class="staff-row">
+                    <div class="staff-main">
+                        <div>
+                            <strong style="font-size:13px;"><span style="color:var(--primary-dark)">[${s.position}]</span> ${s.name}</strong>
+                            <span style="font-size:10px; color:white; background:${typeBadgeColor}; padding:1px 4px; border-radius:4px;">${curDispPayType}</span>
+                        </div>
+                        ${pdfButtons}
+                    </div>
+                    <div class="payroll-detail">
+                        ${payrollWorkText}<br>
+                        ${extAllow > 0 ? `<div style="color:var(--primary); font-weight:bold; margin:2px 0;">➕ 기타수당: ${formatNumber(extAllow)}</div>` : ''}
+                        ${extDed > 0 ? `<div style="color:#ef4444; font-weight:bold; margin:2px 0;">➖ 기타공제: ${formatNumber(extDed)}</div>` : ''}
+                        ${monthEndConfig.fourIns && monthEndConfig.reportedSalary > 0 ? `<div style="color:var(--primary-dark); font-weight:bold; margin:2px 0;">🛡️ 4대보험 공단 신고 보수월액: ${formatNumber(monthEndConfig.reportedSalary)}</div>` : ''}
+                        💵 최종 실지급액: <strong style="color:var(--primary);">${rightDisplayPay}</strong>
+                    </div>
+                </div>
+            `;
+        });
+
+        if (staffFilter === 'trash') {
+            if(!db.trash || db.trash.length === 0) {
+                mgtArea.innerHTML = `<div style="text-align:center; padding:20px; font-size:12px; color:var(--gray);">휴지통이 비어있습니다.</div>`;
+            } else {
+                db.trash.forEach((s, idx) => {
+                    mgtArea.innerHTML += `
+                    <div class="staff-row" style="background:#fef2f2; border-color:#fca5a5;">
+                        <div class="staff-main">
+                            <div>
+                                <strong style="font-size:13px; color:#991b1b;"><span style="color:#b91c1c">[보관됨]</span> ${s.name}</strong> 
+                                <span style="font-size:10px; color:white; background:#ef4444; padding:1px 4px; border-radius:4px;">삭제됨</span>
+                            </div>
+                            <div style="display:flex; gap:4px;">
+                                <button class="btn btn-success" style="padding:4px 8px; font-size:11px;" onclick="restoreStaff(${idx})">🔄 복원</button>
+                                <button class="btn btn-danger" style="padding:4px 8px; font-size:11px;" onclick="hardDeleteStaff(${idx})">❌ 영구삭제</button>
+                            </div>
+                        </div>
+                        <div style="font-size:11px; color:var(--gray); margin-top:4px; line-height: 1.3;">
+                            • 기존 직급: ${s.position || '알바생'} | 급여형태: ${s.payType}<br>
+                            • 연락처: ${s.phone || '-'} | 입사일자: ${s.joinDate || '-'}
+                        </div>
+                    </div>
+                    `;
+                });
+            }
+            payrollArea.innerHTML = `<div style="text-align:center; padding:20px; font-size:12px; color:var(--gray);">휴지통 보기 상태에서는 급여 내역이 표시되지 않습니다.</div>`;
+        }
+
+        const targetSales = parseNumber(document.getElementById('targetSales').value);
+        const ingredients = parseNumber(document.getElementById('costIngredients').value);
+        const rent = parseNumber(document.getElementById('costRent').value);
+        const utilities = parseNumber(document.getElementById('costUtilities').value);
+        db.targetSales = targetSales; db.expenses = { ingredients, rent, utilities };
+
+        const actualSales = parseNumber(document.getElementById('actualSales').value);
+        const actualIngredients = parseNumber(document.getElementById('actualIngredients').value);
+        const actualRent = parseNumber(document.getElementById('actualRent').value);
+        const actualUtilities = parseNumber(document.getElementById('actualUtilities').value);
+        db.actualExpenses = { sales: actualSales, ingredients: actualIngredients, rent: actualRent, utilities: actualUtilities };
+
+        const netProfitTarget = targetSales - (totalMonthPayroll + ingredients + rent + utilities);
+        const netProfitActual = actualSales - (totalMonthPayroll + actualIngredients + actualRent + actualUtilities);
+        
+        document.getElementById('lcReportArea').innerHTML = `
+            <div class="db-item" style="border-left: 4px solid var(--primary);">
+                <div class="db-label">💇‍♂️ 총 인건비 지출액</div>
+                <div class="db-value" style="color:var(--primary);">${formatNumber(totalMonthPayroll)}</div>
+            </div>
+            <div class="db-item" style="background: #f8fafc;">
+                <div class="db-label">🎯 목표 대비 예상 순이익</div>
+                <div class="db-value" style="color: ${netProfitTarget >= 0 ? 'var(--success)' : '#ef4444'}; font-size:13px;">${formatNumber(netProfitTarget)}</div>
+                <div class="status-pill" style="background:var(--gray); font-size:9px;">마진 ${targetSales>0?((netProfitTarget/targetSales)*100).toFixed(1):0}% / 인건비 ${targetSales>0?((totalMonthPayroll/targetSales)*100).toFixed(1):0}%</div>
+            </div>
+            <div class="db-item" style="background: #fffdf5; border: 1px solid var(--accent); grid-column: span 2;">
+                <div class="db-label" style="color: #b45309;">👑 실제 운영 정산 최종 순이익</div>
+                <div class="db-value" style="color: ${netProfitActual >= 0 ? 'var(--success)' : '#ef4444'}; font-size:15px;">${formatNumber(netProfitActual)}</div>
+                <div class="status-pill ${netProfitActual >= 0 ? 'bg-good':'bg-bad'}" style="font-size:9px;">실제 마진율 ${actualSales>0?((netProfitActual/actualSales)*100).toFixed(1):0}% / 인건비율 ${actualSales>0?((totalMonthPayroll/actualSales)*100).toFixed(1):0}%</div>
+            </div>
+        `;
+    }
+
+    function startEditStaff(idx) {
+        currentEditIdx = idx; const s = db.staff[idx];
+        document.getElementById('editingIdx').style.display = 'block'; document.getElementById('historyDateGroup').style.display = 'block';
+        document.getElementById('btnCancelEdit').style.display = 'inline-flex'; document.getElementById('btnSaveStaff').innerText = '정보 수정 저장';
+        document.getElementById('staffFormTitle').innerText = `📝 ${s.name} 직원 정보 수정 중`;
+        
+        document.getElementById('staffName').value = s.name; document.getElementById('staffBirth').value = s.birth || ""; document.getElementById('staffPhone').value = s.phone || "";
+        document.getElementById('staffPosition').value = s.position || "알바생"; document.getElementById('payType').value = s.payType; togglePlaceholder();
+        document.getElementById('payAmount').value = formatNumber(s.amount); document.getElementById('overtimeHourlyPay').value = formatNumber(s.overtimeHourlyPay || 10030);
+        document.getElementById('joinDate').value = s.joinDate; document.getElementById('workStatus').value = s.status; document.getElementById('quitDate').value = s.quitDate;
+        document.getElementById('staffBank').value = s.bank || ""; onBankChange(); document.getElementById('staffAccount').value = s.account || ""; document.getElementById('staffPayDay').value = s.payDay || "매월 10일";
+        
+        toggleQuitDateInput(s.status, 'quitDateContainer'); 
+        
+        const baseDateStr = new Date().toISOString().substring(0, 10);
+        document.getElementById('historyBaseDate').value = baseDateStr;
+        const currentConfig = getStaffConfigForDate(s, baseDateStr);
+        
+        document.getElementById('checkWeekly').checked = (currentConfig.weekly === true || currentConfig.weekly === "true");
+        document.getElementById('checkWeeklyCap').checked = (currentConfig.weeklyCap !== false && currentConfig.weeklyCap !== "false"); 
+        document.getElementById('checkTax33').checked = (currentConfig.tax33 === true || currentConfig.tax33 === "true"); 
+        
+        let checkFourIns = document.getElementById('checkFourIns');
+        checkFourIns.checked = (currentConfig.fourIns === true || currentConfig.fourIns === "true");
+        
+        let repSalInput = document.getElementById('reportedSalary');
+        if (checkFourIns.checked) {
+            repSalInput.style.display = 'block';
+            repSalInput.value = currentConfig.reportedSalary && currentConfig.reportedSalary > 0 ? formatNumber(currentConfig.reportedSalary) : '';
+        } else {
+            repSalInput.style.display = 'none';
+            repSalInput.value = '';
+        }
+
+        document.getElementById('checkIncomeTax').checked = (currentConfig.incomeTax === true || currentConfig.incomeTax === "true");
+        document.getElementById('dependentsCount').value = currentConfig.dependents || 1;
+        document.getElementById('checkLocalTax').checked = (currentConfig.localTax !== false && currentConfig.localTax !== "false");
+        toggleIncomeTaxOptions();
+        
+        document.getElementById('extraAllowance').value = formatNumber(currentConfig.extraAllowance || 0);
+        document.getElementById('extraDeduction').value = formatNumber(currentConfig.extraDeduction || 0);
+
+        setSelectedDays(currentConfig.fixedDays || []);
+        
+        if (currentConfig.customDayTimes && Object.keys(currentConfig.customDayTimes).length > 0) {
+            document.getElementById('enableDetailDays').checked = true;
+            toggleDetailDaysLayout();
+        } else {
+            document.getElementById('enableDetailDays').checked = false;
+            toggleDetailDaysLayout();
+            if(currentConfig.fixedStart) document.getElementById('fixedStart').value = currentConfig.fixedStart;
+            if(currentConfig.fixedEnd) document.getElementById('fixedEnd').value = currentConfig.fixedEnd;
+            if(currentConfig.fixedBreak) document.getElementById('fixedBreak').value = currentConfig.fixedBreak;
+            
+            if(currentConfig.fixedStart2) document.getElementById('fixedStart2').value = currentConfig.fixedStart2;
+            else document.getElementById('fixedStart2').value = "휴무";
+            if(currentConfig.fixedEnd2) document.getElementById('fixedEnd2').value = currentConfig.fixedEnd2;
+            else document.getElementById('fixedEnd2').value = "휴무";
+            if(currentConfig.fixedBreak2) document.getElementById('fixedBreak2').value = currentConfig.fixedBreak2;
+            else document.getElementById('fixedBreak2').value = "0";
+
+            document.getElementById('fixedAssignment').value = calculateAssignment(currentConfig.fixedStart || "10:00", currentConfig.fixedEnd || "21:00");
+        }
+
+        document.getElementById('staffFormTitle').scrollIntoView({ behavior: 'smooth' }); renderStaff();
+    }
+
+    function cancelEdit() {
+        currentEditIdx = null; document.getElementById('editingIdx').style.display = 'none'; document.getElementById('historyDateGroup').style.display = 'none';
+        document.getElementById('btnCancelEdit').style.display = 'none'; document.getElementById('btnSaveStaff').innerText = '명부 등록'; document.getElementById('staffFormTitle').innerText = '➕ 신규 직원 카드 등록 / 계약 정보 수정';
+        document.getElementById('staffName').value = ''; document.getElementById('staffBirth').value = ''; document.getElementById('staffPhone').value = '';
+        document.getElementById('staffBank').value = ''; onBankChange(); document.getElementById('staffAccount').value = ''; document.getElementById('staffPayDay').value = "매월 10일";
+        document.getElementById('fixedAssignment').value = "풀타임"; 
+        
+        document.getElementById('checkWeekly').checked = false;
+        document.getElementById('checkWeeklyCap').checked = true;
+        document.getElementById('checkTax33').checked = false;
+        document.getElementById('checkFourIns').checked = false;
+        document.getElementById('reportedSalary').style.display = 'none';
+        document.getElementById('reportedSalary').value = '';
+        
+        document.getElementById('checkIncomeTax').checked = false;
+        document.getElementById('dependentsCount').value = 1;
+        document.getElementById('checkLocalTax').checked = true;
+        toggleIncomeTaxOptions();
+        
+        document.getElementById('extraAllowance').value = "0원";
+        document.getElementById('extraDeduction').value = "0원";
+        
+        document.getElementById('fixedStart2').value = "휴무";
+        document.getElementById('fixedEnd2').value = "휴무";
+        document.getElementById('fixedBreak2').value = "0";
+
+        document.getElementById('enableDetailDays').checked = false;
+        toggleDetailDaysLayout();
+        setSelectedDays([]); renderStaff();
+    }
+
+    function saveStaffSubmit() {
+        const name = document.getElementById('staffName').value.trim(); const birth = document.getElementById('staffBirth').value.trim(); const phone = document.getElementById('staffPhone').value.trim() || "-";
+        const position = document.getElementById('staffPosition').value; const payType = document.getElementById('payType').value;
+        const amount = payType === "해당없음" ? 0 : parseNumber(document.getElementById('payAmount').value);
+        const overtimeHourlyPay = (payType === "월급" || payType === "일급") ? parseNumber(document.getElementById('overtimeHourlyPay').value) : amount;
+        const joinDate = document.getElementById('joinDate').value || "-"; const status = document.getElementById('workStatus').value;
+        const quitDate = status === '퇴사' ? (document.getElementById('quitDate').value || "-") : "-"; const payDay = document.getElementById('staffPayDay').value.trim() || "매월 10일";
+
+        if(!name || !birth) return alert('이름과 생년월일은 필수 입력 사항입니다.');
+
+        const fixedDays = getSelectedDays(); 
+        const isDetail = document.getElementById('enableDetailDays').checked;
+        
+        let fixedStart = document.getElementById('fixedStart').value; let fixedEnd = document.getElementById('fixedEnd').value; let fixedBreak = document.getElementById('fixedBreak').value; 
+        let fixedStart2 = document.getElementById('fixedStart2').value; let fixedEnd2 = document.getElementById('fixedEnd2').value; let fixedBreak2 = document.getElementById('fixedBreak2').value; 
+        let assignment = calculateAssignment(fixedStart, fixedEnd);
+        let customDayTimes = {};
+
+        if (isDetail) {
+            fixedDays.forEach(d => {
+                customDayTimes[d] = {
+                    start: document.getElementById(`detailStart_${d}`).value, end: document.getElementById(`detailEnd_${d}`).value, breakTime: document.getElementById(`detailBreak_${d}`).value,
+                    start2: document.getElementById(`detailStart2_${d}`).value, end2: document.getElementById(`detailEnd2_${d}`).value, breakTime2: document.getElementById(`detailBreak2_${d}`).value
+                };
+            });
+            if(fixedDays.length > 0) {
+                fixedStart = customDayTimes[fixedDays[0]].start; fixedEnd = customDayTimes[fixedDays[0]].end; fixedBreak = customDayTimes[fixedDays[0]].breakTime;
+                fixedStart2 = customDayTimes[fixedDays[0]].start2; fixedEnd2 = customDayTimes[fixedDays[0]].end2; fixedBreak2 = customDayTimes[fixedDays[0]].breakTime2;
+                assignment = calculateAssignment(fixedStart, fixedEnd);
+            }
+        }
+
+        const weekly = document.getElementById('checkWeekly').checked; const weeklyCap = document.getElementById('checkWeeklyCap').checked;
+        const tax33 = document.getElementById('checkTax33').checked; const fourIns = document.getElementById('checkFourIns').checked;
+        const reportedSalary = fourIns ? parseNumber(document.getElementById('reportedSalary').value) : 0;
+        
+        const incomeTax = document.getElementById('checkIncomeTax').checked;
+        const dependents = parseInt(document.getElementById('dependentsCount').value || 1);
+        const localTax = document.getElementById('checkLocalTax').checked;
+        
+        const extraAllowance = parseNumber(document.getElementById('extraAllowance').value);
+        const extraDeduction = parseNumber(document.getElementById('extraDeduction').value);
+
+        const newConfig = { 
+            fixedDays, fixedStart, fixedEnd, fixedBreak, fixedStart2, fixedEnd2, fixedBreak2, assignment, customDayTimes,
+            weekly, weeklyCap, tax33, fourIns, incomeTax, dependents, localTax,
+            payType, amount, overtimeHourlyPay, reportedSalary, extraAllowance, extraDeduction
+        }; 
+        
+        let historyArr = [];
+
+        if(currentEditIdx !== null) {
+            const oldStaff = db.staff[currentEditIdx]; historyArr = oldStaff.scheduleHistory || [];
+            
+            historyArr.forEach(h => {
+                if(h.payType === undefined) h.payType = oldStaff.payType;
+                if(h.amount === undefined) h.amount = oldStaff.amount;
+                if(h.overtimeHourlyPay === undefined) h.overtimeHourlyPay = oldStaff.overtimeHourlyPay || oldStaff.amount;
+                if(h.reportedSalary === undefined) h.reportedSalary = oldStaff.reportedSalary || 0;
+                if(h.incomeTax === undefined) h.incomeTax = oldStaff.incomeTax || false;
+                if(h.dependents === undefined) h.dependents = oldStaff.dependents || 1;
+                if(h.localTax === undefined) h.localTax = oldStaff.localTax !== false;
+                if(h.extraAllowance === undefined) h.extraAllowance = oldStaff.extraAllowance || 0;
+                if(h.extraDeduction === undefined) h.extraDeduction = oldStaff.extraDeduction || 0;
+            });
+
+            if(historyArr.length === 0) {
+                historyArr.push({ 
+                    startDate: "2000-01-01", fixedDays: oldStaff.fixedDays || [], fixedStart: oldStaff.fixedStart || "10:00", 
+                    fixedEnd: oldStaff.fixedEnd || "21:00", fixedBreak: oldStaff.fixedBreak || "1", 
+                    fixedStart2: oldStaff.fixedStart2 || "휴무", fixedEnd2: oldStaff.fixedEnd2 || "휴무", fixedBreak2: oldStaff.fixedBreak2 || "0", 
+                    assignment: calculateAssignment(oldStaff.fixedStart || "10:00", oldStaff.fixedEnd || "21:00"), customDayTimes: oldStaff.customDayTimes || {},
+                    weekly: oldStaff.weekly || false, weeklyCap: oldStaff.weeklyCap !== false, tax33: oldStaff.tax33 || false, fourIns: oldStaff.fourIns || false,
+                    incomeTax: oldStaff.incomeTax || false, dependents: oldStaff.dependents || 1, localTax: oldStaff.localTax !== false,
+                    payType: oldStaff.payType, amount: oldStaff.amount, overtimeHourlyPay: oldStaff.overtimeHourlyPay || 10030, reportedSalary: oldStaff.reportedSalary || 0,
+                    extraAllowance: oldStaff.extraAllowance || 0, extraDeduction: oldStaff.extraDeduction || 0
+                });
+            }
+            const baseDate = document.getElementById('historyBaseDate').value; if(!baseDate) return alert('수정 사항 반영 기준일자를 입력해 주세요.');
+            const sameDateIdx = historyArr.findIndex(h => h.startDate === baseDate);
+            
+            if(sameDateIdx > -1) { historyArr[sameDateIdx] = Object.assign({ startDate: baseDate }, newConfig); } 
+            else { historyArr.push(Object.assign({ startDate: baseDate }, newConfig)); historyArr.sort((a,b) => new Date(a.startDate + "T00:00:00").getTime() - new Date(b.startDate + "T00:00:00").getTime()); }
+        } else { historyArr.push(Object.assign({ startDate: "2000-01-01" }, newConfig)); }
+
+        const staffData = { 
+            name, birth, phone, position, payType, amount, overtimeHourlyPay, reportedSalary, joinDate, status, quitDate, payDay, 
+            bank: document.getElementById('staffBank').value.trim(), account: document.getElementById('staffAccount').value.trim(), 
+            scheduleHistory: historyArr, fixedDays, fixedStart, fixedEnd, fixedBreak, fixedStart2, fixedEnd2, fixedBreak2, assignment, customDayTimes, 
+            weekly, weeklyCap, tax33, fourIns, incomeTax, dependents, localTax, extraAllowance, extraDeduction
+        };
+
+        if(currentEditIdx !== null) {
+            const oldName = db.staff[currentEditIdx].name;
+            if(oldName !== name) Object.keys(db.schedule).forEach(d => { if(db.schedule[d][oldName]) { db.schedule[d][name] = db.schedule[d][oldName]; delete db.schedule[d][oldName]; } });
+            db.staff[currentEditIdx] = staffData;
+        } else { db.staff.push(staffData); }
+
+        Object.keys(db.schedule).forEach(dStr => { if(db.schedule[dStr][name] && !db.schedule[dStr][name].userCustom) delete db.schedule[dStr][name]; });
+        syncFixedScheduleToCalendar(staffData); currentEditIdx = null; cancelEdit(); saveDB(); updateStaffDropdowns(); renderCalendarFilters(); renderCalendar();
+        alert('시급/급여 정보 및 설정 사항이 지정하신 날짜를 기준으로 정상 저장되었습니다.');
+    }
+
+    function deleteStaff(idx) {
+        if(confirm(`${db.staff[idx].name} 직원을 목록에서 삭제하시겠습니까? (휴지통에 안전하게 임시 보관됩니다)`)) {
+            if(!db.trash) db.trash = [];
+            db.trash.push(db.staff[idx]); 
+            db.staff.splice(idx,1); 
+            saveDB(); updateStaffDropdowns(); renderCalendarFilters(); renderCalendar(); 
+        }
+    }
+
+    function restoreStaff(idx) {
+        db.staff.push(db.trash[idx]);
+        db.trash.splice(idx, 1);
+        saveDB(); updateStaffDropdowns(); renderCalendarFilters(); renderCalendar();
+        alert("직원이 성공적으로 복원되었습니다.");
+    }
+
+    function hardDeleteStaff(idx) {
+        if(confirm("이 직원을 영구 삭제하시겠습니까? (과거 스케줄 기록도 모두 지워지며 복구할 수 없습니다)")) {
+            const name = db.trash[idx].name;
+            Object.keys(db.schedule).forEach(d => { if(db.schedule[d][name]) delete db.schedule[d][name]; });
+            db.trash.splice(idx, 1);
+            saveDB(); renderCalendar();
+            alert("영구 삭제되었습니다.");
+        }
+    }
+
+    function addStaffShiftDirect() {
+        if(!selectedDate) return alert('근무표 달력에서 날짜를 먼저 클릭해 주세요.');
+        const staffName = document.getElementById('addSchedStaffName').value; const start = document.getElementById('addSchedStart').value; const end = document.getElementById('addSchedEnd').value;
+        const breakTime = parseFloat(document.getElementById('addSchedBreak').value || 0); const urgent = document.getElementById('addSchedUrgent').checked;
+        if(!staffName) return alert('근무 추가 대상을 지정해 주세요.');
+
+        if(!db.schedule[selectedDate]) db.schedule[selectedDate] = {};
+        if(!db.schedule[selectedDate][staffName]) {
+            db.schedule[selectedDate][staffName] = { start, end, breakTime, start2: "휴무", end2: "휴무", breakTime2: 0, urgent, assignment: calculateAssignment(start, end), userCustom: true };
+        } else {
+            db.schedule[selectedDate][staffName].start = start;
+            db.schedule[selectedDate][staffName].end = end;
+            db.schedule[selectedDate][staffName].breakTime = breakTime;
+            db.schedule[selectedDate][staffName].urgent = urgent;
+            db.schedule[selectedDate][staffName].userCustom = true;
+        }
+        document.getElementById('addSchedUrgent').checked = false; saveDB(); renderCalendar(); renderScheduleInputs();
+    }
+
+    function removeStaffShiftDirect(name) {
+        if(!selectedDate) return;
+        if(confirm(`${name} 직원의 당일 스케줄 배정을 모두 빼시겠습니까?`)) {
+            if(db.schedule[selectedDate] && db.schedule[selectedDate][name]) { delete db.schedule[selectedDate][name]; db.schedule[selectedDate][name] = { start: "휴무", end: "휴무", breakTime: 0, start2: "휴무", end2: "휴무", breakTime2: 0, urgent: false, assignment: "풀타임", userCustom: true }; saveDB(); renderCalendar(); renderScheduleInputs(); }
+        }
+    }
+
+    function downloadPayslipPDF(idx, mode, normalH, extraH, basePay, extraPay, weekly, extraAllowance, gross, tax33, fourIns, incomeTax, localTax, extraDeduction, net, totalShifts = 0, reportedSal = 0) {
+        const s = db.staff[idx]; const year = document.getElementById('yearSel').value; const month = document.getElementById('monthSel').value;
+        
+        let printGross = gross;
+        let printBase = basePay;
+        let printExtra = extraPay;
+        let printWeekly = weekly;
+        let printExtraAllowance = extraAllowance;
+        let printFourIns = fourIns;
+        let printTax33 = tax33;
+        let printIncomeTax = incomeTax;
+        let printLocalTax = localTax;
+        let printExtraDeduction = extraDeduction;
+        let printNet = net;
+
+        if (mode === 'report_only') {
+            printGross = reportedSal;
+            printBase = reportedSal;
+            printExtra = 0;
+            printWeekly = 0;
+            printExtraAllowance = 0; 
+            printFourIns = Math.round(reportedSal * 0.0944);
+            printExtraDeduction = 0; 
+            printNet = printGross - printTax33 - printFourIns - printIncomeTax - printLocalTax;
+        }
+        
+        document.getElementById('pdfCompName').innerText = db.company?.name || "까몬 포항양덕점"; document.getElementById('pdfCompOwner').innerText = db.company?.owner || "홍길동"; document.getElementById('pdfCompRegNo').innerText = db.company?.regNo || "-";
+        document.getElementById('pdfCompPayDay').innerText = s.payType === "해당없음" ? "지급대상아님" : (s.payDay || "매월 10일"); document.getElementById('pdfName').innerText = `${s.name} [${s.position || '알바생'}]`;
+        document.getElementById('pdfBirth').innerText = s.birth ? s.birth.substring(0,2)+'년 '+s.birth.substring(2,4)+'월 '+s.birth.substring(4,6)+'일' : '-'; document.getElementById('pdfJoinDate').innerText = s.joinDate || "-"; document.getElementById('pdfAccount').innerText = s.bank ? `[${s.bank}] ${s.account}` : "등록 정보 없음";
+        
+        let fileSuffix = "";
+        if (mode === 'report_only') {
+            fileSuffix = "_제출용";
+            document.getElementById('pdfDateTitle').innerText = `${year}년 ${month}월 귀속 급여지급명세서 (공단신고용)`;
+            document.getElementById('pdfNormalHours').innerText = `1 개월`;
+            document.getElementById('pdfExtraHours').innerText = `0 시간`;
+            document.getElementById('pdfNormalHoursCalc').innerText = `신고 보수월액 기준`;
+            document.getElementById('pdfExtraCalc').innerText = `-`;
+        } else {
+            if (mode === 'real_pay') {
+                fileSuffix = "_교부용";
+            } else if (mode === 'standard') {
+                fileSuffix = "_내부관리용";
+            } else {
+                fileSuffix = "";
+            }
+            
+            document.getElementById('pdfDateTitle').innerText = `${year}년 ${month}월 귀속 급여지급명세서`;
+            document.getElementById('pdfNormalHours').innerText = s.payType === "일급" ? `${totalShifts} 일` : `${normalH} 시간`;
+            document.getElementById('pdfExtraHours').innerText = `${extraH} 시간`;
+            
+            if (s.payType === "해당없음") { 
+                document.getElementById('pdfNormalHoursCalc').innerText = "정산대상 제외 직급"; 
+                document.getElementById('pdfExtraCalc').innerText = "정산대상 제외 직급"; 
+            } 
+            else if (s.payType === "일급") { 
+                document.getElementById('pdfNormalHoursCalc').innerText = `${totalShifts}일 (일별 합산)`; 
+                document.getElementById('pdfExtraCalc').innerText = extraH > 0 ? `${extraH}시간 (추가근무 합산)` : `추가 근무 내역 없음`; 
+            } 
+            else { 
+                if(s.payType === "시급") {
+                    let displayCalc = `${normalH}시간 (일별 합산)`;
+                    if(normalH > 0 && basePay === normalH * s.amount) {
+                        displayCalc = `${normalH}시간 × ${s.amount.toLocaleString()}원`;
+                    } else if(normalH > 0) {
+                        let avg = Math.round(basePay / normalH);
+                        displayCalc = `${normalH}시간 (평균시급 ${avg.toLocaleString()}원)`;
+                    }
+                    document.getElementById('pdfNormalHoursCalc').innerText = displayCalc;
+                } else {
+                    document.getElementById('pdfNormalHoursCalc').innerText = `고정 기본 월급 정액 지급`;
+                }
+                
+                if (extraH > 0) {
+                    let extraAvg = Math.round(extraPay / extraH);
+                    document.getElementById('pdfExtraCalc').innerText = `${extraH}시간 (평균 ${extraAvg.toLocaleString()}원 적용)`;
+                } else {
+                    document.getElementById('pdfExtraCalc').innerText = `추가 근무 내역 없음`;
+                }
+            }
+        }
+        
+        let pdfFileName = `급여명세서${fileSuffix}_${year}년_${month}월_${s.name}.pdf`;
+        
+        document.getElementById('pdfBasePay').innerText = formatNumber(printBase); 
+        document.getElementById('pdfExtraPay').innerText = formatNumber(printExtra); 
+        document.getElementById('pdfWeeklyPay').innerText = formatNumber(printWeekly); 
+        
+        let extraAllowRow = document.getElementById('pdfExtraAllowanceRow');
+        if (printExtraAllowance > 0) {
+            extraAllowRow.style.display = '';
+            document.getElementById('pdfExtraAllowance').innerText = formatNumber(printExtraAllowance);
+        } else {
+            extraAllowRow.style.display = 'none';
+        }
+        
+        document.getElementById('pdfGrossPay').innerText = formatNumber(printGross);
+        
+        let deductionHtml = '';
+        if (printTax33 > 0) {
+            deductionHtml += `<tr style="border-bottom: 1px solid #e2e8f0; color: #334155;"><td style="padding: 10px; font-weight: 500;">사업소득세 (3.3%)</td><td style="text-align: right; padding: 10px; font-weight: 700; font-variant-numeric: tabular-nums;">${formatNumber(printTax33)}</td></tr>`;
+        }
+        if (printFourIns > 0) {
+            deductionHtml += `<tr style="border-bottom: 1px solid #e2e8f0; color: #334155;"><td style="padding: 10px; font-weight: 500;">4대 사회보험료</td><td style="text-align: right; padding: 10px; font-weight: 700; font-variant-numeric: tabular-nums;">${formatNumber(printFourIns)}</td></tr>`;
+        }
+        if (printIncomeTax > 0) {
+            deductionHtml += `<tr style="border-bottom: 1px solid #e2e8f0; color: #334155;"><td style="padding: 10px; font-weight: 500;">근로소득세 (간이세액)</td><td style="text-align: right; padding: 10px; font-weight: 700; font-variant-numeric: tabular-nums;">${formatNumber(printIncomeTax)}</td></tr>`;
+        }
+        if (printLocalTax > 0) {
+            deductionHtml += `<tr style="border-bottom: 1px solid #e2e8f0; color: #334155;"><td style="padding: 10px; font-weight: 500;">지방소득세 (10%)</td><td style="text-align: right; padding: 10px; font-weight: 700; font-variant-numeric: tabular-nums;">${formatNumber(printLocalTax)}</td></tr>`;
+        }
+        if (printExtraDeduction > 0) {
+            deductionHtml += `<tr style="border-bottom: 1px solid #e2e8f0; color: #334155;"><td style="padding: 10px; font-weight: 500;">기타 공제 (대여금 등)</td><td style="text-align: right; padding: 10px; font-weight: 700; font-variant-numeric: tabular-nums;">${formatNumber(printExtraDeduction)}</td></tr>`;
+        }
+        
+        if (deductionHtml === '') {
+            deductionHtml = `<tr style="border-bottom: 1px solid #cbd5e1; color: #94a3b8; text-align: center;"><td style="padding: 10px; font-weight: 500; text-align: left; color: #cbd5e1;">공제 내역 없음</td><td style="text-align: right; padding: 10px; color: #cbd5e1; font-weight: 500;">-</td></tr>`;
+        }
+        
+        let totalDeduction = printTax33 + printFourIns + printIncomeTax + printLocalTax + printExtraDeduction;
+        deductionHtml += `<tr style="background: #f8fafc; font-weight: 700;"><td style="padding: 11px 10px; color: #1e293b;">공제액 총계</td><td style="text-align: right; padding: 11px 10px; color: #991b1b; font-variant-numeric: tabular-nums; font-size: 14px;">${formatNumber(totalDeduction)}</td></tr>`;
+        
+        document.getElementById('pdfDeductionTbody').innerHTML = deductionHtml;
+        document.getElementById('pdfNetPay').innerText = formatNumber(printNet);
+        document.getElementById('pdfSignatureText').innerText = `${db.company?.name || '까몬 포항양덕점'} 대표자 ${db.company?.owner || '홍길동'} (인)`;
+        
+        const pdfStampImg = document.getElementById('pdfStampImg');
+        if (stampBase64) { pdfStampImg.src = stampBase64; pdfStampImg.style.display = 'block'; } else { pdfStampImg.style.display = 'none'; }
+        
+        const wrapper = document.getElementById('pdfHideWrapper');
+        const targetElement = document.getElementById('payslipPdfStructure');
+
+        wrapper.style.left = '0px';
+        wrapper.style.top = '0px';
+        wrapper.style.opacity = '0.01';
+        wrapper.style.zIndex = '-1000';
+
+        html2pdf().set({ 
+            margin: 0, 
+            filename: pdfFileName, 
+            image: { type: 'jpeg', quality: 1.0 }, 
+            html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0 }, 
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
+        }).from(targetElement).save().then(() => {
+            wrapper.style.left = '-9999px';
+            wrapper.style.top = '-9999px';
+            wrapper.style.opacity = '1';
+        }).catch(err => {
+            alert("PDF 변환 중 에러가 발생했습니다.");
+            wrapper.style.left = '-9999px';
+            wrapper.style.top = '-9999px';
+            wrapper.style.opacity = '1';
+        });
+    }
+
+    function downloadScheduleImage() {
+        switchPage('pageCalendar');
+        const calendarCard = document.querySelector('#pageCalendar .card').cloneNode(true);
+        calendarCard.querySelector('#yearSel').value = document.getElementById('yearSel').value;
+        calendarCard.querySelector('#monthSel').value = document.getElementById('monthSel').value;
+        
+        calendarCard.querySelectorAll('button').forEach(btn => btn.style.display = 'none');
+        
+        const filterDiv = calendarCard.querySelector('#calendarStaffFilter');
+        if (filterDiv) filterDiv.style.display = 'none';
+
+        const legendDiv = document.createElement('div');
+        legendDiv.style.cssText = "margin-top: 15px; padding: 12px; border: 1px solid #e2e8f0; background: white; display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; border-radius: 8px; font-weight:700; font-size:12px; color:#1a202c;";
+        legendDiv.innerHTML = `
+            <div style="display:flex; align-items:center; gap:6px;"><span style="display:inline-block; width:14px; height:14px; background:#e6f4ea; border:1px solid #ceead6; border-radius:3px;"></span> 풀타임 (종일)</div>
+            <div style="display:flex; align-items:center; gap:6px;"><span style="display:inline-block; width:14px; height:14px; background:#fef3c7; border:1px solid #fde68a; border-radius:3px;"></span> 점심 (오전~오후)</div>
+            <div style="display:flex; align-items:center; gap:6px;"><span style="display:inline-block; width:14px; height:14px; background:#dbeafe; border:1px solid #bfdbfe; border-radius:3px;"></span> 저녁 (오후~마감)</div>
+            <div style="display:flex; align-items:center; gap:6px;"><span style="display:inline-block; width:14px; height:14px; background:#ffffff; border:2px dashed #ef4444; border-radius:3px;"></span> 추가/긴급근무</div>
+        `;
+        calendarCard.appendChild(legendDiv);
+
+        const wrapper = document.createElement('div');
+        wrapper.style.position = 'absolute'; wrapper.style.left = '-9999px'; wrapper.style.top = '-9999px'; wrapper.style.width = '800px'; wrapper.style.padding = '20px'; wrapper.style.background = 'var(--bg-main)';
+        wrapper.appendChild(calendarCard); document.body.appendChild(wrapper);
+
+        setTimeout(() => {
+            html2canvas(wrapper, { scale: 2, useCORS: true, backgroundColor: '#f4f7fa' }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `까몬_포항양덕점_${document.getElementById('yearSel').value}년_${document.getElementById('monthSel').value}월_근무표.png`;
+                link.href = canvas.toDataURL('image/png'); link.click(); document.body.removeChild(wrapper);
+            }).catch(err => { alert("이미지 저장 오류"); document.body.removeChild(wrapper); });
+        }, 300);
+    }
+
+    function renderCalendar() {
+        const y = parseInt(document.getElementById('yearSel').value); const m = parseInt(document.getElementById('monthSel').value);
+        const cal = document.getElementById('calendar'); cal.innerHTML = '';
+        const firstDayIdx = new Date(y, m - 1, 1).getDay(); const days = new Date(y, m, 0).getDate();
+        const realToday = new Date(); const tYear = realToday.getFullYear(); const tMonth = realToday.getMonth() + 1; const tDay = realToday.getDate();
+
+        for(let s = 0; s < firstDayIdx; s++) { const emptyBox = document.createElement('div'); emptyBox.style.width = "100%"; cal.appendChild(emptyBox); }
+
+        const monthStr = String(m).padStart(2, '0');
+
+        for(let i = 1; i <= days; i++) {
+            const dayStr = String(i).padStart(2, '0'); const dateStr = `${y}-${monthStr}-${dayStr}`; 
+            const box = document.createElement('div'); box.className = 'day-box';
+            if(selectedDate === dateStr) box.classList.add('active');
+            if (y === tYear && m === tMonth && i === tDay) box.classList.add('today');
+
+            const holidayName = holidayMap[`${y}-${monthStr}-${dayStr}`];
+            if (new Date(y, m - 1, i).getDay() === 0 || holidayName) box.classList.add('holiday');
+
+            const headerFlex = document.createElement('div'); headerFlex.className = 'day-header-flex';
+            const numDiv = document.createElement('div'); numDiv.className = 'day-num'; numDiv.innerText = i; headerFlex.appendChild(numDiv);
+            if (holidayName) { const label = document.createElement('div'); label.className = 'holiday-label'; label.innerText = holidayName; headerFlex.appendChild(label); }
+            box.appendChild(headerFlex);
+
+            db.staff.forEach(s => { syncFixedScheduleToCalendar(s); });
+
+            const badgesContainer = document.createElement('div'); badgesContainer.className = 'shift-badges';
+            let hasUrgent = false;
+
+            if(db.schedule[dateStr]) {
+                Object.keys(db.schedule[dateStr]).forEach(stName => {
+                    if(activeCalendarStaffFilters.size > 0 && !activeCalendarStaffFilters.has(stName)) return;
+
+                    let info = db.schedule[dateStr][stName];
+                    if(info && info.start !== "휴무" && info.end !== "휴무") {
+                        const assignStr = calculateAssignment(info.start, info.end); 
+                        const nameBadge = document.createElement('div'); nameBadge.className = 'staff-name-badge';
+                        if(assignStr === '점심') nameBadge.classList.add('badge-lunch'); else if(assignStr === '저녁') nameBadge.classList.add('badge-dinner'); else nameBadge.classList.add('badge-full');
+                        if (info.urgent === true) { hasUrgent = true; nameBadge.classList.add('badge-urgent'); nameBadge.innerText = `⚠️ ${stName}`; } else { nameBadge.innerText = stName; }
+                        badgesContainer.appendChild(nameBadge);
+                    }
+                    if(info && info.start2 && info.start2 !== "휴무" && info.end2 && info.end2 !== "휴무") {
+                        const assignStr = calculateAssignment(info.start2, info.end2); 
+                        const nameBadge2 = document.createElement('div'); nameBadge2.className = 'staff-name-badge';
+                        if(assignStr === '점심') nameBadge2.classList.add('badge-lunch'); else if(assignStr === '저녁') nameBadge2.classList.add('badge-dinner'); else nameBadge2.classList.add('badge-full');
+                        nameBadge2.innerText = `[T2] ` + (info.urgent === true ? `⚠️ ${stName}` : stName);
+                        badgesContainer.appendChild(nameBadge2);
+                    }
+                });
+            }
+            box.appendChild(badgesContainer);
+            const dotContainer = document.createElement('div'); dotContainer.className = 'dot-container';
+            if(hasUrgent) { const uDot = document.createElement('span'); uDot.className = 'extra-badge-dot'; dotContainer.appendChild(uDot); }
+            if(db.memos[dateStr] && db.memos[dateStr].trim() !== "") { const mDot = document.createElement('span'); mDot.className = 'memo-dot'; dotContainer.appendChild(mDot); }
+            box.appendChild(dotContainer);
+            
+            box.onclick = () => selectDate(dateStr); 
+            cal.appendChild(box);
+        }
+        renderStaff();
+    }
+
+    function selectDate(date) { 
+        selectedDate = date; 
+        document.getElementById('editCard').style.display = 'block'; 
+        document.getElementById('targetDateTitle').innerText = `📌 ${date} 배치 상세`; 
+        
+        const memoEl = document.getElementById('dayMemo');
+        memoEl.value = db.memos[selectedDate] || ""; 
+        memoEl.readOnly = (currentMode === 'staff'); 
+        
+        renderCalendar(); 
+        renderScheduleInputs(); 
+    }
+
+    function saveMemo() { db.memos[selectedDate] = document.getElementById('dayMemo').value; saveDB(); renderCalendar(); }
+
+    function renderScheduleInputs() {
+        const container = document.getElementById('scheduleInputs'); container.innerHTML = '';
+        if(!db.schedule[selectedDate]) db.schedule[selectedDate] = {};
+        const dayShifts = Object.keys(db.schedule[selectedDate]).filter(name => db.schedule[selectedDate][name].start !== "휴무" || (db.schedule[selectedDate][name].start2 && db.schedule[selectedDate][name].start2 !== "휴무"));
+        
+        if(dayShifts.length === 0) return container.innerHTML = `<div style="text-align:center; padding:15px; color:var(--gray); font-size:12px;">📅 배정 근무자가 없습니다.</div>`;
+
+        dayShifts.forEach(stName => {
+            const res = db.schedule[selectedDate][stName]; 
+            const div = document.createElement('div'); 
+            div.style.background = res.urgent ? "#f3e8ff" : "#fff"; 
+            div.style.padding = "10px"; 
+            div.style.borderRadius = "8px"; 
+            div.style.border = res.urgent ? "2px solid #a855f7" : "1px solid var(--border)"; 
+            div.style.marginBottom = "4px";
+            
+            if (currentMode === 'admin') {
+                let startOptions = timeOptions.map(t => `<option value="${t}" ${res.start===t?'selected':''}>${t}</option>`).join('');
+                let endOptions = timeOptions.map(t => `<option value="${t}" ${res.end===t?'selected':''}>${t}</option>`).join('');
+                let breakOptions = `<option value="0" ${res.breakTime==0?'selected':''}>휴식무</option><option value="0.5" ${res.breakTime==0.5?'selected':''}>30분</option><option value="1" ${res.breakTime==1?'selected':''}>1시간</option><option value="1.5" ${res.breakTime==1.5?'selected':''}>1.5h</option><option value="2" ${res.breakTime==2?'selected':''}>2시간</option>`;
+
+                let startOptions2 = timeOptions.map(t => `<option value="${t}" ${(res.start2||"휴무")===t?'selected':''}>${t}</option>`).join('');
+                let endOptions2 = timeOptions.map(t => `<option value="${t}" ${(res.end2||"휴무")===t?'selected':''}>${t}</option>`).join('');
+                let breakOptions2 = `<option value="0" ${(res.breakTime2||0)==0?'selected':''}>휴무/없음</option><option value="0.5" ${res.breakTime2==0.5?'selected':''}>30분</option><option value="1" ${res.breakTime2==1?'selected':''}>1시간</option><option value="1.5" ${res.breakTime2==1.5?'selected':''}>1.5h</option><option value="2" ${res.breakTime2==2?'selected':''}>2시간</option>`;
+
+                div.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                        <span style="font-weight:700; font-size:12px; color:var(--primary-dark);">[${(db.staff.find(s=>s.name===stName)||{}).position || '알바'} ] ${stName}</span>
+                        <div style="display:flex; gap:6px; align-items:center;">
+                            <label style="color:#8b5cf6; font-size:10px; font-weight:700;"><input type="checkbox" ${res.urgent?'checked':''} onchange="setUrgent('${stName}', this.checked)"> 추가근무</label>
+                            <button class="btn btn-danger" style="padding:2px 6px; font-size:10px;" onclick="removeStaffShiftDirect('${stName}')">전체제외</button>
+                        </div>
+                    </div>
+                    <div class="flex-group" style="margin-bottom:2px;">
+                        <span style="font-size:10px; width:20px; font-weight:bold; color:var(--primary);">T1</span>
+                        <select style="background:white; flex:1; padding:4px;" onchange="setWorkTime('${stName}', 'start', this.value)">${startOptions}</select>
+                        <select style="background:white; flex:1; padding:4px;" onchange="setWorkTime('${stName}', 'end', this.value)">${endOptions}</select>
+                        <select style="background:#f8fafc; flex:1; padding:4px; font-size:11px;" onchange="setWorkTime('${stName}', 'breakTime', this.value)">${breakOptions}</select>
+                    </div>
+                    <div class="flex-group">
+                        <span style="font-size:10px; width:20px; font-weight:bold; color:#ea580c;">T2</span>
+                        <select style="background:white; flex:1; padding:4px;" onchange="setWorkTime('${stName}', 'start2', this.value)">${startOptions2}</select>
+                        <select style="background:white; flex:1; padding:4px;" onchange="setWorkTime('${stName}', 'end2', this.value)">${endOptions2}</select>
+                        <select style="background:#f8fafc; flex:1; padding:4px; font-size:11px;" onchange="setWorkTime('${stName}', 'breakTime2', this.value)">${breakOptions2}</select>
+                    </div>
+                `;
+            } else {
+                let timeStr1 = res.start !== "휴무" ? `${res.start} ~ ${res.end} <span style="color:var(--gray); font-size:10px;">(휴식 ${res.breakTime}h)</span>` : "휴무";
+                let timeStr2 = (res.start2 && res.start2 !== "휴무") ? `<div style="margin-top:2px;"><span style="color:#ea580c; font-weight:bold; font-size:10px;">[T2]</span> ${res.start2} ~ ${res.end2} <span style="color:var(--gray); font-size:10px;">(휴식 ${res.breakTime2}h)</span></div>` : "";
+                
+                div.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                        <span style="font-weight:700; font-size:12px; color:var(--primary-dark);">[${(db.staff.find(s=>s.name===stName)||{}).position || '알바'} ] ${stName} ${res.urgent?'<span style="color:#8b5cf6; font-size:10px; margin-left:4px;">⚠️ 추가근무</span>':''}</span>
+                    </div>
+                    <div style="font-size:12px; color:var(--dark-gray); padding-left:2px; background:var(--light-gray); padding:6px; border-radius:6px;">
+                        <div><span style="color:var(--primary); font-weight:bold; font-size:10px;">[T1]</span> ${timeStr1}</div>
+                        ${timeStr2}
+                    </div>
+                `;
+            }
+            container.appendChild(div);
+        });
+    }
+
+    function setWorkTime(name, type, val) { if(db.schedule[selectedDate][name]) { db.schedule[selectedDate][name][type] = val; db.schedule[selectedDate][name].userCustom = true; db.schedule[selectedDate][name].assignment = calculateAssignment(db.schedule[selectedDate][name].start, db.schedule[selectedDate][name].end); saveDB(); renderCalendar(); renderScheduleInputs(); } }
+    function setUrgent(name, checked) { if(db.schedule[selectedDate][name]) { db.schedule[selectedDate][name].urgent = checked; db.schedule[selectedDate][name].userCustom = true; saveDB(); renderCalendar(); renderScheduleInputs(); } }
+
+    function copyToMonth() {
+        if(!selectedDate || !confirm("이 날짜의 배치를 이달 전체에 일괄 복사합니까?")) return;
+        const y = document.getElementById('yearSel').value; const m = document.getElementById('monthSel').value;
+        for(let i=1; i<=new Date(y, m, 0).getDate(); i++) { 
+            let dKey = `${y}-${String(m).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+            db.schedule[dKey] = JSON.parse(JSON.stringify(db.schedule[selectedDate])); 
+            Object.keys(db.schedule[dKey]).forEach(k => db.schedule[dKey][k].userCustom = true);
+        }
+        saveDB(); renderCalendar(); alert('일괄 복사되었습니다.');
+    }
+
+    function shareKakao() {
+        if(!selectedDate) return; let text = `📌 까몬 포항양덕점 근무현황 (${selectedDate})\n`;
+        if(db.memos[selectedDate]) text += `📢 공지: ${db.memos[selectedDate]}\n------------------------\n`;
+        let hasStaff = false;
+        if(db.schedule[selectedDate]) {
+            Object.keys(db.schedule[selectedDate]).forEach(stName => {
+                let info = db.schedule[selectedDate][stName]; 
+                if(info && info.start && info.start !== '휴무') {
+                    hasStaff = true; text += ` ▪️ [${(db.staff.find(s=>s.name===stName)||{}).position||'알바'}] ${stName} (${calculateAssignment(info.start, info.end)}): ${info.start}~${info.end}${info.urgent?' [추가]':''}\n`; 
+                }
+                if(info && info.start2 && info.start2 !== '휴무') {
+                    text += `    ↳ (더블): ${info.start2}~${info.end2}\n`;
+                }
+            });
+        }
+        if(!hasStaff) text += " ▪️ 확정 근무자 없음\n";
+        navigator.clipboard.writeText(text).then(() => alert('카톡 공지용 텍스트 복사 완료!'));
+    }
+
+    function downloadCSV(type) {
+        let csvContent = "\uFEFF구분,이름,생년월일,직급,급여형태,금액,추가근무시급,신고보수액,입사일,상태\n";
+        db.staff.forEach(s => csvContent += `직원카드,${s.name},${s.birth||''},${s.position||''},${s.payType},${s.amount},${s.overtimeHourlyPay||10030},${s.reportedSalary||0},${s.joinDate||''},${s.status||''}\n`);
+        const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })); link.setAttribute("download", 'camon_erp_master_backup.csv'); document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    }
+
+    window.onload = init;
+</script>
+</body>
+</html>
