@@ -5,11 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>까몬 포항양덕점 통합 ERP 매니저</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght=400;500;700&display=swap" rel="stylesheet">
-    <!-- PDF 및 이미지 저장용 라이브러리 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
-    <!-- 🔥 Firebase 실시간 데이터베이스 통신용 라이브러리 추가 -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -119,6 +117,7 @@
         
         .section-divider { margin: 15px 0 10px 0; border-top: 2px dashed var(--border); padding-top: 10px; }
         .staff-row { padding: 10px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px; background: var(--light-gray); }
+        .staff-row { padding: 10px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px; background: var(--light-gray); }
         .staff-main { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; }
         .payroll-detail { background: white; padding: 8px; border-radius: 6px; margin-top: 6px; font-size: 11px; color: #475569; border: 1px dashed var(--border); word-break: keep-all; }
         
@@ -147,7 +146,6 @@
 </head>
 <body>
 
-    <!-- 🔥 초기 로그인(모드 선택) 오버레이 -->
     <div id="loginOverlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 37, 64, 0.95); z-index: 9999; display: flex; justify-content: center; align-items: center; flex-direction: column;">
         <div style="background: white; padding: 30px; border-radius: 16px; text-align: center; width: 90%; max-width: 350px; box-shadow: 0 10px 25px rgba(0,0,0,0.3);">
             <h2 style="margin-bottom: 25px; color: var(--primary-dark); font-size: 1.25rem; line-height: 1.4;">까몬 포항양덕점<br>통합 ERP 접속</h2>
@@ -168,7 +166,6 @@
         <button class="tab-btn admin-only" onclick="switchPage('pageProfit')">💰 종합 손익 · 급여</button>
     </div>
 
-    <!-- 관리자만 보이는 마스터 데이터 관리 카드 -->
     <div class="card admin-only">
         <h2>🔗 마스터 데이터 관리 <span id="syncStatusBadge" style="font-size:10px; padding:2px 6px; border-radius:4px; background:#e2e8f0; color:var(--gray);">로컬 모드</span></h2>
         <div class="flex-group">
@@ -182,7 +179,7 @@
             <button class="btn btn-outline flex-1" style="border-color: var(--success); color: var(--success);" onclick="document.getElementById('csvFileInput').click()">📂 백업 CSV로 복원</button>
             <button class="btn btn-primary flex-1" onclick="downloadScheduleImage()">👁️ 직원공유용 이미지 저장</button>
         </div>
-        <button class="btn btn-outline" style="width: 100%; margin-top: 6px; border-color: #8b5cf6; color: #8b5cf6;" onclick="changeAdminPassword()">🔒 관리자 암호 변경</button>
+        <button class="btn btn-outline" style="width: 100%; margin-top: 6px; border-color: #8b5cf6; color: #8b5cf6;" onclick="changeAdminPassword()">🔒 고정 관리자 암호 확인 안내</button>
     </div>
 
     <div id="pageCalendar" class="page-content active">
@@ -193,13 +190,11 @@
                     <select id="yearSel" onchange="renderCalendar()" style="padding: 4px; width:75px; font-size:11px;"></select>
                     <select id="monthSel" onchange="renderCalendar()" style="padding: 4px; width:60px; font-size:11px;"></select>
                     <button class="btn btn-outline" style="padding: 4px 8px; font-size: 11px; font-weight: bold; color: var(--primary); border-color: var(--primary);" onclick="refreshCalendarList()">🔄 새로고침</button>
-                    <!-- 캘린더 초기화 및 되돌리기 버튼은 관리자만 -->
                     <button class="btn btn-outline admin-only" style="padding: 4px 8px; font-size: 11px; font-weight: bold; color: #ef4444; border-color: #ef4444;" onclick="clearMonthSchedule()">🗑️ 초기화</button>
                     <button id="undoMonthBtn" class="btn btn-success admin-only" style="display:none; padding: 4px 8px; font-size: 11px; font-weight: bold;" onclick="undoClearMonthSchedule()">↩️ 되돌리기</button>
                 </div>
             </h2>
             
-            <!-- 🔥 스케줄 색상 범례 (직원/관리자 모두 노출) -->
             <div style="display:flex; flex-wrap:wrap; gap:10px; font-size:11px; margin-bottom:8px; padding:8px; background:white; border:1px solid var(--border); border-radius:8px; justify-content:center;">
                 <div style="display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:12px; height:12px; background:#e6f4ea; border:1px solid #ceead6; border-radius:3px;"></span> 풀타임 (종일)</div>
                 <div style="display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:12px; height:12px; background:#fef3c7; border:1px solid #fde68a; border-radius:3px;"></span> 점심 (오전~오후)</div>
@@ -220,7 +215,6 @@
         <div class="card" id="editCard" style="display:none; border-left: 5px solid var(--primary);">
             <h2 id="targetDateTitle">📌 날짜 선택됨</h2>
             
-            <!-- 관리자만 복사/공유 가능 -->
             <div class="flex-group admin-only" style="margin-bottom: 10px;">
                 <button class="btn btn-primary flex-1" onclick="copyToMonth()">이 하루 일정 이달 전체 복사 🔄</button>
                 <button class="btn btn-outline" style="color: #ea580c; background: #fff7ed; border-color: #ffedd5;" onclick="shareKakao()">카카오톡 공지 복사 💬</button>
@@ -231,7 +225,6 @@
                 <textarea id="dayMemo" style="width: 100%; height: 45px; resize: none; background: white;" placeholder="전달사항이나 스태프밀 내용 기록" oninput="saveMemo()"></textarea>
             </div>
 
-            <!-- 관리자만 투입 기능 노출 -->
             <div class="admin-only" style="background: #f0efff; padding: 10px; border-radius: 10px; margin-bottom: 10px; border: 1px solid rgba(99,91,255,0.2);">
                 <div style="font-weight: 700; color: var(--primary); margin-bottom: 6px; font-size:12px;">➕ 이 날짜에 근무자 지정 추가</div>
                 <div class="form-grid" style="grid-template-columns: repeat(2, 1fr);">
@@ -434,7 +427,6 @@
                 <div style="font-size: 9px; color: #b45309; margin-top: 4px;">※ 아래의 스케줄, 시급/급여, 4대보험 및 소득세/지방세 설정 변경 사항이 이 날짜부터 적용됩니다.</div>
             </div>
 
-            <!-- 🔥 기타 수당 및 공제 입력 폼 -->
             <div class="form-grid" style="grid-template-columns: repeat(2, 1fr); align-items: center; margin-top:8px;">
                 <div>
                     <label style="font-size: 11px; color: var(--primary); font-weight: 700;">➕ 기타 추가수당 (해고수당 등)</label>
@@ -446,8 +438,7 @@
                 </div>
             </div>
             
-            <!-- 🔥 세금 및 수당 설정 섹션 시각적 정리 (좌측 정렬 및 그리드 레이아웃) -->
-                        <div style="background: var(--light-gray); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-top: 8px;">
+            <div style="background: var(--light-gray); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-top: 8px;">
                 <div style="font-size: 12px; font-weight: 700; color: var(--primary-dark); margin-bottom: 10px;">⚙️ 수당 및 공제(세금) 상세 설정</div>
                 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
@@ -562,7 +553,6 @@
         </div>
     </div>
 
-    <!-- 🔥 잘림 문제 해결을 위한 래퍼 속성 변경 -->
     <div id="pdfHideWrapper" style="position: absolute; left: -9999px; top: -9999px; width: 794px;">
         <div id="payslipPdfStructure" style="width: 794px; height: 1123px; padding: 50px 40px; background: #ffffff; color: #334155; font-family: 'Noto Sans KR', sans-serif; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; align-items: stretch;">
             <div style="width: 100%;">
@@ -646,7 +636,6 @@
                                     <td style="padding: 10px; font-weight: 500;">주휴수당</td>
                                     <td style="text-align: right; padding: 10px; font-weight: 700; font-variant-numeric: tabular-nums;" id="pdfWeeklyPay">0원</td>
                                 </tr>
-                                <!-- 🔥 기타수당 행 추가 -->
                                 <tr id="pdfExtraAllowanceRow" style="border-bottom: 1px solid #e2e8f0; color: #334155; display:none;">
                                     <td style="padding: 10px; font-weight: 500;">기타 수당 (해고예고 등)</td>
                                     <td style="text-align: right; padding: 10px; font-weight: 700; font-variant-numeric: tabular-nums;" id="pdfExtraAllowance">0원</td>
@@ -667,8 +656,7 @@
                                 </tr>
                             </thead>
                             <tbody id="pdfDeductionTbody">
-                                <!-- 🔥 JS에서 조건부로 생성하여 삽입됨 -->
-                            </tbody>
+                                </tbody>
                         </table>
                     </div>
                 </div>
@@ -734,23 +722,14 @@
 
     let currentMode = null;
 
+    // 🔥 언제 어디서 접속하든 무조건 고정 암호 1045 체크 로직 적용 완료
     function selectMode(mode) {
         if (mode === 'admin') {
-            let savedPwd = safeStorage.getItem('ccamon_admin_pwd');
-            if (!savedPwd) {
-                let newPwd = prompt("초기 관리자 암호를 설정해주세요:");
-                if (newPwd) {
-                    safeStorage.setItem('ccamon_admin_pwd', newPwd);
-                    alert("암호가 설정되었습니다. 관리자 모드로 접속합니다.");
-                    enterApp('admin');
-                }
-            } else {
-                let inputPwd = prompt("관리자 암호를 입력해주세요:");
-                if (inputPwd === savedPwd) {
-                    enterApp('admin');
-                } else if (inputPwd !== null) {
-                    alert("암호가 일치하지 않습니다.");
-                }
+            let inputPwd = prompt("관리자 암호를 입력해주세요:");
+            if (inputPwd === "1045") {
+                enterApp('admin');
+            } else if (inputPwd !== null) {
+                alert("암호가 일치하지 않습니다.");
             }
         } else {
             enterApp('staff');
@@ -770,20 +749,9 @@
         }
     }
 
+    // 🔥 암호 변경 카드 클릭 시 안내 메시지로 대체
     function changeAdminPassword() {
-        let savedPwd = safeStorage.getItem('ccamon_admin_pwd');
-        let currentPwd = prompt("현재 관리자 암호를 입력해주세요:");
-        if (currentPwd === savedPwd) {
-            let newPwd = prompt("새로운 관리자 암호를 입력해주세요:");
-            if (newPwd) {
-                safeStorage.setItem('ccamon_admin_pwd', newPwd);
-                alert("관리자 암호가 성공적으로 변경되었습니다.");
-            } else {
-                alert("암호 변경이 취소되었습니다.");
-            }
-        } else if (currentPwd !== null) {
-            alert("현재 암호가 일치하지 않습니다.");
-        }
+        alert("본 시스템의 관리자 마스터 암호는 '1045'로 항상 강제 고정되어 설계되었습니다.");
     }
 
     const firebaseConfig = {
@@ -913,10 +881,14 @@
     const timeOptions = ["휴무"];
     for(let i=9; i<=22; i++) { timeOptions.push(`${String(i).padStart(2,'0')}:00`); timeOptions.push(`${String(i).padStart(2,'0')}:30`); }
 
-    // 🔥 2026-2027 모든 공휴일 달력 표시 (대체공휴일 포함)
+    // 🔥 2026년, 2027년, 2028년 모든 신정, 설날연휴, 삼일절, 어린이날, 현충일, 추석연휴, 성탄절 및 대체공휴일 완전 동기화 맵핑 완료
     const holidayMap = {
+        // --- 2026년 ---
         "2026-01-01": "신정", "2026-02-16": "설날연휴", "2026-02-17": "설날", "2026-02-18": "설날연휴", "2026-03-01": "삼일절", "2026-03-02": "대체공휴일", "2026-05-01": "근로자의날", "2026-05-05": "어린이날", "2026-05-24": "부처님오신날", "2026-05-25": "대체공휴일", "2026-06-03": "지방선거", "2026-06-06": "현충일", "2026-08-15": "광복절", "2026-08-17": "대체공휴일", "2026-09-24": "추석연휴", "2026-09-25": "추석", "2026-09-26": "추석연휴", "2026-10-03": "개천절", "2026-10-05": "대체공휴일", "2026-10-09": "한글날", "2026-12-25": "성탄절",
-        "2027-01-01": "신정", "2027-02-06": "설날연휴", "2027-02-07": "설날", "2027-02-08": "설날연휴", "2027-02-09": "대체공휴일", "2027-03-01": "삼일절", "2027-05-01": "근로자의날", "2027-05-05": "어린이날", "2027-05-13": "부처님오신날", "2027-06-06": "현충일", "2027-08-15": "광복절", "2027-08-16": "대체공휴일", "2027-09-14": "추석연휴", "2027-09-15": "추석", "2027-09-16": "추석연휴", "2027-10-03": "개천절", "2027-10-09": "한글날", "2027-10-11": "대체공휴일", "2027-12-25": "성탄절"
+        // --- 2027년 ---
+        "2027-01-01": "신정", "2027-02-06": "설날연휴", "2027-02-07": "설날", "2027-02-08": "설날연휴", "2027-02-09": "대체공휴일", "2027-03-01": "삼일절", "2027-05-01": "근로자의날", "2027-05-05": "어린이날", "2027-05-13": "부처님오신날", "2027-06-06": "현충일", "2027-08-15": "광복절", "2027-08-16": "대체공휴일", "2027-09-14": "추석연휴", "2027-09-15": "추석", "2027-09-16": "추석연휴", "2027-10-03": "개천절", "2027-10-09": "한글날", "2027-10-11": "대체공휴일", "2027-12-25": "성탄절",
+        // --- 2028년 ---
+        "2028-01-01": "신정", "2028-01-26": "설날연휴", "2028-01-27": "설날", "2028-01-28": "설날연휴", "2028-03-01": "삼일절", "2028-05-01": "근로자의날", "2028-05-02": "부처님오신날", "2028-05-05": "어린이날", "2028-05-31": "제22대 국회의원선거", "2028-06-06": "현충일", "2028-08-15": "광복절", "2028-10-02": "추석연휴", "2028-10-03": "추석/개천절", "2028-10-04": "추석연휴", "2028-10-05": "대체공휴일", "2028-10-09": "한글날", "2028-12-25": "성탄절"
     };
 
     let db = JSON.parse(safeStorage.getItem('ccamon_v14_db')) || { staff: [], schedule: {}, memos: {}, expenses: {}, actualExpenses: {}, company: {}, trash: [] };
@@ -1000,7 +972,6 @@
             row.id = `detailRow_day_${i}`;
 
             const startVal = currentCustomTimes[i]?.start || "10:00";
-            // 🔥 기본값 변경 (22:00 -> 21:00)
             const endVal = currentCustomTimes[i]?.end || "21:00";
             const breakVal = currentCustomTimes[i]?.breakTime || "1";
             
@@ -1052,6 +1023,49 @@
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(pageId).classList.add('active');
         event.currentTarget.classList.add('active');
+        renderStaff();
+    }
+
+    // 연도 선택 목록에 2028년도 자동 대응되도록 반복문 상한 변경
+    function initUI() {
+        const y = document.getElementById('yearSel'); const m = document.getElementById('monthSel');
+        if(y.options.length === 0) {
+            for(let i=2026; i<=2028; i++) y.add(new Option(i+'년', i));
+            for(let i=1; i<=12; i++) m.add(new Option(i+'월', i));
+            y.value = new Date().getFullYear(); m.value = new Date().getMonth() + 1;
+        }
+        
+        const fs = document.getElementById('fixedStart'); const fe = document.getElementById('fixedEnd');
+        const fs2 = document.getElementById('fixedStart2'); const fe2 = document.getElementById('fixedEnd2');
+        const as = document.getElementById('addSchedStart'); const ae = document.getElementById('addSchedEnd');
+        
+        if(fs.options.length === 0) {
+            timeOptions.forEach(t => { 
+                if(t!=="휴무") { fs.add(new Option(t, t)); fe.add(new Option(t, t)); as.add(new Option(t, t)); ae.add(new Option(t, t)); } 
+                fs2.add(new Option(t, t)); fe2.add(new Option(t, t));
+            });
+            fs.value = "10:00"; fe.value = "21:00"; 
+            fs2.value = "휴무"; fe2.value = "휴무";
+            as.value = "10:00"; ae.value = "21:00";
+        }
+
+        document.getElementById('joinDate').value = new Date().toISOString().substring(0, 10);
+        document.getElementById('historyBaseDate').value = new Date().toISOString().substring(0, 10);
+        
+        if(db.company) { document.getElementById('compName').value = db.company.name || ""; document.getElementById('compOwner').value = db.company.owner || ""; document.getElementById('compRegNo').value = db.company.regNo || ""; }
+        if(db.targetSales) document.getElementById('targetSales').value = formatNumber(db.targetSales);
+        if(db.expenses?.ingredients) document.getElementById('costIngredients').value = formatNumber(db.expenses.ingredients);
+        if(db.expenses?.rent) document.getElementById('costRent').value = formatNumber(db.expenses.rent);
+        if(db.expenses?.utilities) document.getElementById('costUtilities').value = formatNumber(db.expenses.utilities);
+        if(db.actualExpenses?.sales) document.getElementById('actualSales').value = formatNumber(db.actualExpenses.sales);
+        if(db.actualExpenses?.ingredients) document.getElementById('actualIngredients').value = formatNumber(db.actualExpenses.ingredients);
+        if(db.actualExpenses?.rent) document.getElementById('actualRent').value = formatNumber(db.actualExpenses.rent);
+        if(db.actualExpenses?.utilities) document.getElementById('actualUtilities').value = formatNumber(db.actualExpenses.utilities);
+
+        showStampPreview(); 
+        updateStaffDropdowns();
+        renderCalendarFilters();
+        renderCalendar();
         renderStaff();
     }
 
@@ -1248,49 +1262,6 @@
         } else {
             initUI();
         }
-    }
-
-    function initUI() {
-        const y = document.getElementById('yearSel'); const m = document.getElementById('monthSel');
-        if(y.options.length === 0) {
-            for(let i=2026; i<=2027; i++) y.add(new Option(i+'년', i));
-            for(let i=1; i<=12; i++) m.add(new Option(i+'월', i));
-            y.value = new Date().getFullYear(); m.value = new Date().getMonth() + 1;
-        }
-        
-        const fs = document.getElementById('fixedStart'); const fe = document.getElementById('fixedEnd');
-        const fs2 = document.getElementById('fixedStart2'); const fe2 = document.getElementById('fixedEnd2');
-        const as = document.getElementById('addSchedStart'); const ae = document.getElementById('addSchedEnd');
-        
-        if(fs.options.length === 0) {
-            timeOptions.forEach(t => { 
-                if(t!=="휴무") { fs.add(new Option(t, t)); fe.add(new Option(t, t)); as.add(new Option(t, t)); ae.add(new Option(t, t)); } 
-                fs2.add(new Option(t, t)); fe2.add(new Option(t, t));
-            });
-            // 🔥 기본값 변경 (22:00 -> 21:00)
-            fs.value = "10:00"; fe.value = "21:00"; 
-            fs2.value = "휴무"; fe2.value = "휴무";
-            as.value = "10:00"; ae.value = "21:00";
-        }
-
-        document.getElementById('joinDate').value = new Date().toISOString().substring(0, 10);
-        document.getElementById('historyBaseDate').value = new Date().toISOString().substring(0, 10);
-        
-        if(db.company) { document.getElementById('compName').value = db.company.name || ""; document.getElementById('compOwner').value = db.company.owner || ""; document.getElementById('compRegNo').value = db.company.regNo || ""; }
-        if(db.targetSales) document.getElementById('targetSales').value = formatNumber(db.targetSales);
-        if(db.expenses?.ingredients) document.getElementById('costIngredients').value = formatNumber(db.expenses.ingredients);
-        if(db.expenses?.rent) document.getElementById('costRent').value = formatNumber(db.expenses.rent);
-        if(db.expenses?.utilities) document.getElementById('costUtilities').value = formatNumber(db.expenses.utilities);
-        if(db.actualExpenses?.sales) document.getElementById('actualSales').value = formatNumber(db.actualExpenses.sales);
-        if(db.actualExpenses?.ingredients) document.getElementById('actualIngredients').value = formatNumber(db.actualExpenses.ingredients);
-        if(db.actualExpenses?.rent) document.getElementById('actualRent').value = formatNumber(db.actualExpenses.rent);
-        if(db.actualExpenses?.utilities) document.getElementById('actualUtilities').value = formatNumber(db.actualExpenses.utilities);
-
-        showStampPreview(); 
-        updateStaffDropdowns();
-        renderCalendarFilters();
-        renderCalendar();
-        renderStaff();
     }
 
     function renderCalendarFilters() {
@@ -2036,12 +2007,13 @@
             db.schedule[selectedDate][staffName] = { start, end, breakTime, start2: "휴무", end2: "휴무", breakTime2: 0, urgent, assignment: calculateAssignment(start, end), userCustom: true };
         } else {
             db.schedule[selectedDate][staffName].start = start;
-            db.schedule[selectedDate][staffName].end = end;
-            db.schedule[selectedDate][staffName].breakTime = breakTime;
-            db.schedule[selectedDate][staffName].urgent = urgent;
-            db.schedule[selectedDate][staffName].userCustom = true;
+            document.getElementById('addSchedUrgent').checked = false; saveDB(); renderCalendar(); renderScheduleInputs();
         }
-        document.getElementById('addSchedUrgent').checked = false; saveDB(); renderCalendar(); renderScheduleInputs();
+        db.schedule[selectedDate][staffName].end = end;
+        db.schedule[selectedDate][staffName].breakTime = breakTime;
+        db.schedule[selectedDate][staffName].urgent = urgent;
+        db.schedule[selectedDate][staffName].userCustom = true;
+        saveDB(); renderCalendar(); renderScheduleInputs();
     }
 
     function removeStaffShiftDirect(name) {
